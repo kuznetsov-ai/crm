@@ -236,6 +236,7 @@ export default function Sidebar({ onClose }: Props) {
       {/* Collapse toggle */}
       <button
         onClick={toggleSidebar}
+        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         className={`border-t border-[var(--border)] flex items-center gap-2 px-4 py-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--bg-hover)] transition-colors w-full shrink-0 ${sidebarCollapsed ? 'justify-center' : ''}`}
         title={sidebarCollapsed ? t('common.expandMenu') : t('common.collapseMenu')}
       >
