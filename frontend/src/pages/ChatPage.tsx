@@ -728,14 +728,38 @@ export default function ChatPage() {
     }
   }
 
-  // Open the reaction quick-bar inline (positioned at the message)
+  // Inline reaction picker — small bubble next to the message, independent of ctxMenu.
+  const [reactPickerFor, setReactPickerFor] = useState<{ msgId: number; x: number; y: number } | null>(null)
+  const reactPickerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!reactPickerFor) return
+    const handler = (e: MouseEvent) => {
+      if (reactPickerRef.current && !reactPickerRef.current.contains(e.target as Node)) {
+        setReactPickerFor(null)
+      }
+    }
+    // Delay so the click that opened it doesn't immediately close it
+    const t = setTimeout(() => document.addEventListener('mousedown', handler), 50)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('mousedown', handler)
+    }
+  }, [reactPickerFor])
+
   const openReactionPickerForMessage = (msg: ChatMessage, anchor: HTMLElement) => {
     const r = anchor.getBoundingClientRect()
-    setCtxMenu({
-      x: Math.max(8, Math.min(r.right - 220, window.innerWidth - 220)),
-      y: Math.max(8, r.top - 60),
-      msg,
+    setReactPickerFor({
+      msgId: msg.id,
+      x: Math.max(8, Math.min(r.left, window.innerWidth - 240)),
+      y: Math.max(8, r.top - 48),
     })
+  }
+
+  const reactPickerSend = (emoji: string) => {
+    if (!reactPickerFor) return
+    sendReaction(reactPickerFor.msgId, emoji)
+    setReactPickerFor(null)
   }
 
   const ctxReply = () => { if (!ctxMenu) return; setReplyTo(ctxMenu.msg); setCtxMenu(null) }
@@ -1575,6 +1599,30 @@ export default function ChatPage() {
               </button>
             ))
           })()}
+        </div>
+      )}
+
+      {/* ── Inline reaction quick-pick ── */}
+      {reactPickerFor && (
+        <div
+          ref={reactPickerRef}
+          role="menu"
+          aria-label="Reaction picker"
+          className="fixed z-50 flex gap-1 px-2 py-1.5 rounded-full bg-[var(--bg-card-solid,var(--bg-card))] border border-[var(--border)] shadow-lg"
+          style={{ left: reactPickerFor.x, top: reactPickerFor.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {QUICK_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => reactPickerSend(emoji)}
+              className="text-lg leading-none w-7 h-7 flex items-center justify-center hover:scale-125 active:scale-95 transition-transform"
+              aria-label={`React with ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
         </div>
       )}
 
