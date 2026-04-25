@@ -49,8 +49,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
+        # Stamp last_seen and broadcast presence to channel members
+        await self._touch_last_seen()
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_presence',
+                'user_id': self.user.id,
+                'user_name': getattr(self.user, 'full_name', None) or self.user.email,
+                'online': True,
+                'last_seen': None,
+            }
+        )
+
     async def disconnect(self, close_code):
         if hasattr(self, 'room_group_name'):
+            ts = await self._touch_last_seen()
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_presence',
+                    'user_id': self.user.id,
+                    'user_name': getattr(self.user, 'full_name', None) or self.user.email,
+                    'online': False,
+                    'last_seen': ts.isoformat() if ts else None,
+                }
+            )
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
@@ -119,6 +143,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def chat_message_deleted(self, event):
         await self.send(text_data=json.dumps({'type': 'message_deleted', 'message_id': event['message_id']}))
+
+    async def chat_presence(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'presence',
+            'user_id': event['user_id'],
+            'user_name': event['user_name'],
+            'online': event['online'],
+            'last_seen': event.get('last_seen'),
+        }))
+
+    async def chat_message_read(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'message_read',
+            'message_id': event['message_id'],
+            'user_id': event['user_id'],
+            'read_at': event['read_at'],
+        }))
+
+    @database_sync_to_async
+    def _touch_last_seen(self):
+        from django.contrib.auth import get_user_model
+        from django.utils import timezone
+        User = get_user_model()
+        now = timezone.now()
+        User.objects.filter(pk=self.user.id).update(last_seen=now)
+        return now
 
     @database_sync_to_async
     def check_membership(self):

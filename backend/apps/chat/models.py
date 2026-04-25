@@ -57,6 +57,9 @@ class ChatMessage(models.Model):
     reply_to = models.ForeignKey(
         'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies'
     )
+    forwarded_from = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='forwards'
+    )
     is_edited = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -113,3 +116,27 @@ class ChatMention(models.Model):
 
     def __str__(self):
         return f'@{self.mentioned_user} in msg {self.message_id}'
+
+
+class ChatMessageRead(models.Model):
+    """Read receipt: which user has read which message and when.
+
+    Used for ✓✓ marker. Soft state — created on first observation.
+    Indexed for "who read this message" and "what's my last-read in this channel" queries.
+    """
+    workspace = models.ForeignKey(
+        'workspaces.Workspace', on_delete=models.CASCADE, related_name='+'
+    )
+    message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name='reads')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='message_reads')
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    objects = WorkspaceManager()
+
+    class Meta:
+        unique_together = ('message', 'user')
+        indexes = [
+            models.Index(fields=['user', 'message']),
+            models.Index(fields=['message', 'read_at']),
+        ]
+        ordering = ['-read_at']

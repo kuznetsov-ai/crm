@@ -69,19 +69,39 @@ class ChatMessageSerializer(serializers.ModelSerializer):
     author = ChatUserSerializer(read_only=True)
     reactions = ChatReactionSerializer(many=True, read_only=True)
     reply_to_preview = serializers.SerializerMethodField()
+    forwarded_from_preview = serializers.SerializerMethodField()
     attachment_url = serializers.SerializerMethodField()
     attachment = serializers.FileField(write_only=True, required=False, allow_null=True)
     mentions = serializers.SerializerMethodField()
+    read_by = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatMessage
         fields = ['id', 'channel', 'author', 'text', 'reply_to', 'reply_to_preview',
+                  'forwarded_from', 'forwarded_from_preview',
                   'is_edited', 'reactions', 'created_at', 'updated_at',
                   'attachment', 'attachment_url', 'attachment_name',
-                  'attachment_size', 'attachment_mime', 'mentions']
+                  'attachment_size', 'attachment_mime', 'mentions', 'read_by']
         read_only_fields = ['id', 'author', 'is_edited', 'created_at', 'updated_at',
                             'attachment_name', 'attachment_size', 'attachment_mime',
-                            'attachment_url', 'mentions']
+                            'attachment_url', 'mentions', 'read_by', 'forwarded_from_preview']
+
+    def get_forwarded_from_preview(self, obj):
+        if obj.forwarded_from:
+            f = obj.forwarded_from
+            return {
+                'id': f.id,
+                'text': (f.text or '')[:120],
+                'author': f.author.full_name if f.author else '',
+            }
+        return None
+
+    def get_read_by(self, obj):
+        # List of user_ids that have read the message (excluding the author)
+        try:
+            return list(obj.reads.values_list('user_id', flat=True))
+        except Exception:
+            return []
 
     def get_mentions(self, obj):
         return [

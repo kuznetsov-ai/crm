@@ -70,7 +70,7 @@ class ChatMessageListView(generics.ListCreateAPIView):
         # verify membership
         if not ChatChannel.objects.filter(pk=channel_id, members=self.request.user).exists():
             return ChatMessage.objects.none()
-        return ChatMessage.objects.filter(channel_id=channel_id).select_related('author', 'reply_to__author').prefetch_related('reactions__user').order_by('created_at')
+        return ChatMessage.objects.filter(channel_id=channel_id).select_related('author', 'reply_to__author', 'forwarded_from__author').prefetch_related('reactions__user', 'reads').order_by('created_at')
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -131,6 +131,139 @@ class ChatMessageListView(generics.ListCreateAPIView):
             )
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+
+class ChatPresenceView(APIView):
+    """GET /api/chat/<channel_id>/presence/ — last_seen for every member."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, channel_id):
+        if not ChatChannel.objects.filter(pk=channel_id, members=request.user).exists():
+            return Response({'error': 'not_a_member'}, status=status.HTTP_403_FORBIDDEN)
+        from django.contrib.auth import get_user_model
+        from django.utils import timezone
+        from datetime import timedelta
+        User = get_user_model()
+        members = (
+            User.objects.filter(chat_channels__id=channel_id)
+            .values('id', 'first_name', 'last_name', 'email', 'last_seen')
+        )
+        now = timezone.now()
+        result = []
+        for m in members:
+            ls = m['last_seen']
+            online = bool(ls and (now - ls) < timedelta(seconds=60))
+            result.append({
+                'user_id': m['id'],
+                'name': f"{m['first_name']} {m['last_name']}".strip() or m['email'],
+                'last_seen': ls.isoformat() if ls else None,
+                'online': online,
+            })
+        return Response({'members': result, 'now': now.isoformat()})
+
+
+class ChatMarkReadView(APIView):
+    """POST /api/chat/<channel_id>/mark-read/ {message_ids: [...]} — record read receipts."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, channel_id):
+        if not ChatChannel.objects.filter(pk=channel_id, members=request.user).exists():
+            return Response({'error': 'not_a_member'}, status=status.HTTP_403_FORBIDDEN)
+        ids = request.data.get('message_ids') or []
+        if not isinstance(ids, list):
+            return Response({'error': 'message_ids must be list'}, status=status.HTTP_400_BAD_REQUEST)
+        from .models import ChatMessageRead
+        msgs = ChatMessage.objects.filter(pk__in=ids, channel_id=channel_id).exclude(author=request.user)
+        ws_id = getattr(request, 'workspace', None)
+        ws_id = ws_id.id if ws_id else (msgs.first().workspace_id if msgs.exists() else None)
+        created_ids = []
+        for m in msgs:
+            _, created = ChatMessageRead.objects.get_or_create(
+                message=m, user=request.user,
+                defaults={'workspace_id': m.workspace_id},
+            )
+            if created:
+                created_ids.append(m.id)
+
+        # Broadcast each new read receipt over WS
+        layer = get_channel_layer()
+        if layer is not None and created_ids:
+            from django.utils import timezone
+            now_iso = timezone.now().isoformat()
+            for mid in created_ids:
+                async_to_sync(layer.group_send)(
+                    f'ws_{ws_id}_chat_{channel_id}' if ws_id else f'chat_{channel_id}',
+                    {
+                        'type': 'chat_message_read',
+                        'message_id': mid,
+                        'user_id': request.user.id,
+                        'read_at': now_iso,
+                    }
+                )
+        return Response({'ok': True, 'marked': len(created_ids)})
+
+
+class ChatMembersView(APIView):
+    """POST /api/chat/<channel_id>/members/ {user_ids: [...]} — add to group.
+    DELETE /api/chat/<channel_id>/members/<user_id>/ — remove from group.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _channel(self, channel_id, request):
+        try:
+            ch = ChatChannel.objects.get(pk=channel_id, members=request.user)
+        except ChatChannel.DoesNotExist:
+            return None, Response({'error': 'not_a_member'}, status=status.HTTP_403_FORBIDDEN)
+        if ch.channel_type != ChatChannel.ChannelType.GROUP:
+            return None, Response({'error': 'not_a_group'}, status=status.HTTP_400_BAD_REQUEST)
+        return ch, None
+
+    def post(self, request, channel_id):
+        ch, err = self._channel(channel_id, request)
+        if err: return err
+        ids = request.data.get('user_ids') or []
+        if not isinstance(ids, list) or not ids:
+            return Response({'error': 'user_ids required'}, status=status.HTTP_400_BAD_REQUEST)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        users = User.objects.filter(pk__in=ids)
+        for u in users:
+            ch.members.add(u)
+        return Response({'ok': True, 'added': [u.id for u in users]})
+
+    def delete(self, request, channel_id, user_id=None):
+        ch, err = self._channel(channel_id, request)
+        if err: return err
+        if user_id is None:
+            return Response({'error': 'user_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        ch.members.remove(user_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ChatMediaView(APIView):
+    """GET /api/chat/<channel_id>/media/?kind=image|audio|file — gallery view."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, channel_id):
+        if not ChatChannel.objects.filter(pk=channel_id, members=request.user).exists():
+            return Response({'error': 'not_a_member'}, status=status.HTTP_403_FORBIDDEN)
+        kind = request.query_params.get('kind') or 'all'
+        qs = (
+            ChatMessage.objects.filter(channel_id=channel_id)
+            .exclude(attachment='')
+            .exclude(attachment__isnull=True)
+            .select_related('author')
+            .order_by('-created_at')
+        )
+        if kind == 'image':
+            qs = qs.filter(attachment_mime__startswith='image/')
+        elif kind == 'audio':
+            qs = qs.filter(attachment_mime__startswith='audio/')
+        elif kind == 'file':
+            qs = qs.exclude(attachment_mime__startswith='image/').exclude(attachment_mime__startswith='audio/')
+        qs = qs[:200]
+        data = ChatMessageSerializer(qs, many=True, context={'request': request}).data
+        return Response({'results': data, 'kind': kind, 'count': len(data)})
 
 
 class ChatMessageDetailView(APIView):
