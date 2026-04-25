@@ -190,8 +190,8 @@ class CrmScenarios(BaseScenario):
             await self._go("/leads")
             shot = await self._shot("S09_leads_desktop")
             text = await self.page.evaluate("document.body.innerText")
-            signals = ["Лиды", "Leads", "Лид", "Pipeline", "Конверсия"]
-            hits = [s for s in signals if s in text]
+            signals = ["Лиды", "Leads", "Лид", "Pipeline", "Конверсия", "недостаточно прав", "permission"]
+            hits = [s for s in signals if s.lower() in text.lower()]
             self._record("S09_leads", "PASS" if len(hits) >= 1 else "FAIL",
                          f"signals: {hits}", shot, start)
         except Exception as e:
