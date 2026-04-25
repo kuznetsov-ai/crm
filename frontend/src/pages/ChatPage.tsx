@@ -1574,6 +1574,25 @@ export default function ChatPage() {
         </div>
       )}
 
+      {/* ── Members modal ── */}
+      {activeChannel && (
+        <MembersModal
+          channel={activeChannel}
+          open={membersOpen}
+          onClose={() => setMembersOpen(false)}
+          onChanged={loadChannels}
+        />
+      )}
+
+      {/* ── Media gallery modal ── */}
+      {activeChannelId && (
+        <MediaGalleryModal
+          channelId={activeChannelId}
+          open={galleryOpen}
+          onClose={() => setGalleryOpen(false)}
+        />
+      )}
+
       {/* ── Image lightbox ── */}
       {lightbox && (
         <div

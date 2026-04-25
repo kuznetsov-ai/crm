@@ -427,6 +427,72 @@ class CrmScenarios(BaseScenario):
             self._record("S21_chat_composer", "FAIL", str(e),
                          await self._shot("S21_err"), start)
 
+    # ── S23: Reactions — open picker, click emoji, see reaction count ─
+    async def test_chat_reactions(self):
+        start = await self._step("S23_chat_reactions")
+        try:
+            await self._set_vp("desktop")
+            await self._go("/chat", wait=2.0)
+            # Hover over the first message to reveal the 🙂+ button (or just click — the button has md:opacity-0 md:group-hover:opacity-100, but it's still present in DOM)
+            add_btn = self.page.locator("button[aria-label='Add reaction']").first
+            if await add_btn.count() == 0:
+                self._record("S23_chat_reactions", "FAIL", "no add-reaction button found",
+                             await self._shot("S23_no_btn"), start)
+                return
+            await add_btn.evaluate("el => { el.style.opacity = 1 }")
+            await add_btn.click(force=True)
+            await asyncio.sleep(0.7)
+            # Quick-emoji bar (👍 ❤️ 😂 etc) should be visible — click 🔥
+            fire = self.page.locator("button:has-text('🔥')").first
+            if await fire.count() == 0:
+                self._record("S23_chat_reactions", "FAIL", "quick-pick bar didn't open",
+                             await self._shot("S23_no_picker"), start)
+                return
+            await fire.click()
+            await asyncio.sleep(1.5)
+            shot = await self._shot("S23_after_react")
+            text = await self.page.evaluate("document.body.innerText")
+            ok = "🔥" in text
+            self._record("S23_chat_reactions", "PASS" if ok else "FAIL",
+                         f"🔥 visible after react: {ok}", shot, start)
+        except Exception as e:
+            self._record("S23_chat_reactions", "FAIL", str(e),
+                         await self._shot("S23_err"), start)
+
+    # ── S24: Attachment — programmatically attach file and send ───
+    async def test_chat_attachment(self):
+        start = await self._step("S24_chat_attachment")
+        try:
+            await self._set_vp("desktop")
+            await self._go("/chat", wait=2.0)
+            file_input = self.page.locator("input[type='file']").first
+            if await file_input.count() == 0:
+                self._record("S24_chat_attachment", "FAIL", "no file input found",
+                             await self._shot("S24_no_input"), start)
+                return
+            # Create a tiny inline image (tracker.png — 1x1 transparent PNG)
+            import base64, tempfile, os
+            png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
+            tmpdir = tempfile.gettempdir()
+            png_path = os.path.join(tmpdir, "titan-probe.png")
+            with open(png_path, "wb") as f:
+                f.write(base64.b64decode(png_b64))
+            await file_input.set_input_files(png_path)
+            await asyncio.sleep(0.5)
+            # Press Enter to submit (form has the file in pendingFile)
+            inp = self.page.locator("input[type='text'], textarea").last
+            await inp.fill("titan attached")
+            await inp.press("Enter")
+            await asyncio.sleep(3.0)
+            shot = await self._shot("S24_after_attach")
+            text = await self.page.evaluate("document.body.innerText")
+            ok = "titan attached" in text
+            self._record("S24_chat_attachment", "PASS" if ok else "FAIL",
+                         f"text 'titan attached' visible: {ok}", shot, start)
+        except Exception as e:
+            self._record("S24_chat_attachment", "FAIL", str(e),
+                         await self._shot("S24_err"), start)
+
     # ── S22: Chat mobile — single pane + back button ─────────
     async def test_chat_mobile_single_pane(self):
         start = await self._step("S22_chat_mobile")
@@ -489,6 +555,8 @@ class CrmScenarios(BaseScenario):
             self.test_desktop_collapse,
             self.test_chat_send_message,
             self.test_chat_composer_ui,
+            self.test_chat_reactions,
+            self.test_chat_attachment,
             self.test_chat_mobile_single_pane,
             self.test_mobile_screenshots,
         ]
