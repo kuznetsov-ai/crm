@@ -434,24 +434,38 @@ class CrmScenarios(BaseScenario):
         start = await self._step("S23_chat_reactions")
         try:
             await self._set_vp("desktop")
-            await self._go("/chat", wait=2.0)
-            # Hover over the first message to reveal the 🙂+ button (or just click — the button has md:opacity-0 md:group-hover:opacity-100, but it's still present in DOM)
-            add_btn = self.page.locator("button[aria-label='Add reaction']").first
+            await self._go("/chat", wait=2.5)
+
+            # First send a fresh message so we always have one to react to
+            inp = self.page.locator("input[type='text'], textarea").last
+            if await inp.count() > 0:
+                await inp.fill("titan-react-target")
+                await inp.press("Enter")
+                await asyncio.sleep(2.0)
+
+            # Force-show the 🙂+ button (it's hover-only on desktop) by injecting CSS
+            await self.page.add_style_tag(content="button[aria-label='Add reaction']{opacity:1!important}")
+            add_btn = self.page.locator("button[aria-label='Add reaction']").last
             if await add_btn.count() == 0:
-                self._record("S23_chat_reactions", "FAIL", "no add-reaction button found",
+                self._record("S23_chat_reactions", "FAIL", "no add-reaction button",
                              await self._shot("S23_no_btn"), start)
                 return
-            await add_btn.evaluate("el => { el.style.opacity = 1 }")
+            await add_btn.scroll_into_view_if_needed()
             await add_btn.click(force=True)
-            await asyncio.sleep(0.7)
-            # Quick-emoji bar (👍 ❤️ 😂 etc) should be visible — click 🔥
-            fire = self.page.locator("button:has-text('🔥')").first
-            if await fire.count() == 0:
-                self._record("S23_chat_reactions", "FAIL", "quick-pick bar didn't open",
+            try:
+                await self.page.wait_for_selector(
+                    "[role='menu'][aria-label='Reaction picker']", timeout=3000,
+                )
+            except Exception:
+                self._record("S23_chat_reactions", "FAIL", "reaction picker did not open",
                              await self._shot("S23_no_picker"), start)
                 return
+
+            fire = self.page.locator(
+                "[role='menu'][aria-label='Reaction picker'] button[aria-label='React with 🔥']"
+            ).first
             await fire.click()
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(2.5)  # wait for WS broadcast + handleReaction reload
             shot = await self._shot("S23_after_react")
             text = await self.page.evaluate("document.body.innerText")
             ok = "🔥" in text
