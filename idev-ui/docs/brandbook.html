@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iDev UI Kit — Брендбук</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 40px; line-height: 1.5; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; }
+.header-logo { display: flex; align-items: center; gap: 12px; }
+.header-logo .dot { width: 36px; height: 36px; background: #fd7448; border-radius: 50%; }
+.header-logo h1 { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 800; color: #fff; }
+.header-logo span { font-size: 13px; color: #555; margin-top: 2px; display: block; }
+.header-badge { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px; padding: 6px 14px; font-size: 12px; color: #666; }
+.header-badge b { color: #fd7448; }
+
+h2 { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+h2 .num { width: 28px; height: 28px; background: #fd7448; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; flex-shrink: 0; }
+h3 { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+
+.section { margin-bottom: 52px; }
+.divider { border: none; border-top: 1px solid #1a1a1a; margin: 40px 0; }
+
+/* ── 1. TOKENS ── */
+.color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.color-tile { border-radius: 12px; overflow: hidden; }
+.color-swatch { height: 64px; position: relative; }
+.color-swatch .check { position: absolute; bottom: 6px; right: 8px; font-size: 10px; color: rgba(255,255,255,.4); }
+.color-body { background: #111; padding: 10px 12px; }
+.color-name { font-size: 12px; color: #ccc; font-weight: 600; }
+.color-var { font-size: 10px; color: #fd7448; font-family: monospace; margin-top: 2px; }
+.color-hex { font-size: 10px; color: #555; font-family: monospace; }
+
+.type-table { width: 100%; border-collapse: collapse; }
+.type-table tr { border-bottom: 1px solid #1a1a1a; }
+.type-table td { padding: 10px 0; vertical-align: middle; }
+.type-label { font-size: 11px; color: #555; width: 120px; }
+.type-size { font-size: 11px; color: #666; width: 160px; }
+
+.space-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+.space-box { background: rgba(253,116,72,.15); border: 1px solid rgba(253,116,72,.3); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.space-label { font-size: 10px; color: #666; text-align: center; margin-top: 4px; }
+
+/* ── 2. COMPONENTS ── */
+.comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.comp-panel { border-radius: 16px; padding: 24px; }
+.comp-panel.dark { background: #1a191e; border: 1px solid #2d2d2d; }
+.comp-panel.light { background: #ffffff; border: 1px solid #e5e5e5; }
+.comp-panel-title { font-size: 11px; text-transform: uppercase; color: #666; letter-spacing: .5px; margin-bottom: 20px; display: flex; align-items: center; gap: 6px; }
+
+/* Buttons */
+.btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; border: none; cursor: default; }
+.btn-sm { padding: 5px 14px; font-size: 11px; }
+.btn-primary { background: #fd7448; color: #fff; }
+.btn-outline-dark { background: transparent; color: #fd7448; border: 1.5px solid #fd7448; }
+.btn-outline-light { background: transparent; color: #fd7448; border: 1.5px solid #fd7448; }
+.btn-ghost-dark { background: #2d2d2d; color: #ccc; }
+.btn-ghost-light { background: #f0f0f0; color: #555; }
+.btn-danger { background: rgba(239,68,68,.15); color: #f87171; }
+
+/* Badges */
+.badge-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.b-orange-d { background: rgba(253,116,72,.15); color: #fd7448; }
+.b-green-d  { background: rgba(74,222,128,.12); color: #4ade80; }
+.b-yellow-d { background: rgba(250,204,21,.1);  color: #facc15; }
+.b-blue-d   { background: rgba(96,165,250,.12); color: #60a5fa; }
+.b-gray-d   { background: #2d2d2d; color: #888; }
+.b-red-d    { background: rgba(239,68,68,.12); color: #f87171; }
+.b-orange-l { background: #fff0eb; color: #fd7448; }
+.b-green-l  { background: #f0fdf4; color: #16a34a; }
+.b-yellow-l { background: #fffbeb; color: #d97706; }
+.b-blue-l   { background: #eff6ff; color: #3b82f6; }
+.b-gray-l   { background: #f5f5f5; color: #888; }
+.b-red-l    { background: #fef2f2; color: #ef4444; }
+
+/* Stat cards */
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+.stat-dark { background: #2d2d2d; border-radius: 12px; padding: 12px; }
+.stat-light { background: #f8f9fa; border-radius: 12px; padding: 12px; border: 1px solid #eee; }
+.stat-val { font-family: 'Montserrat', sans-serif; font-size: 24px; font-weight: 800; }
+.stat-sub { font-size: 10px; text-transform: uppercase; color: #666; margin-top: 2px; }
+
+/* Input */
+.inp { width: 100%; padding: 9px 14px; border-radius: 10px; font-size: 13px; outline: none; margin-bottom: 8px; font-family: inherit; }
+.inp-dark { background: #2d2d2d; border: 1.5px solid #3d3d3d; color: #fff; }
+.inp-light { background: #fff; border: 1.5px solid #ddd; color: #111; }
+
+/* Table */
+.mini-table { border-radius: 12px; overflow: hidden; margin-bottom: 0; }
+.mini-table-dark { background: #2d2d2d; }
+.mini-table-light { background: #fff; border: 1px solid #eee; }
+.t-head { display: grid; grid-template-columns: 2fr 1fr 1fr; padding: 8px 12px; font-size: 10px; text-transform: uppercase; }
+.t-head-dark { background: #222; color: #555; }
+.t-head-light { background: #f5f5f5; color: #999; }
+.t-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding: 8px 12px; font-size: 11px; align-items: center; }
+.t-row-dark { border-top: 1px solid #333; color: #ccc; }
+.t-row-light { border-top: 1px solid #f0f0f0; color: #333; }
+
+/* ── 3. THEME SWITCH ── */
+.theme-code { background: #111; border-radius: 12px; padding: 20px; font-family: monospace; font-size: 12px; line-height: 1.8; overflow-x: auto; }
+.tc-comment { color: #555; }
+.tc-selector { color: #fd7448; }
+.tc-prop { color: #60a5fa; }
+.tc-val-dark { color: #4ade80; }
+.tc-val-light { color: #facc15; }
+.tc-val-shared { color: #c084fc; }
+
+/* ── 4. ARCHITECTURE ── */
+.arch { display: grid; grid-template-columns: 220px 40px 1fr; gap: 0; align-items: center; }
+.arch-kit { background: #111; border: 2px solid #fd7448; border-radius: 14px; padding: 18px; }
+.arch-kit h4 { font-family: 'Montserrat', sans-serif; font-size: 13px; color: #fd7448; font-weight: 700; margin-bottom: 12px; }
+.arch-kit .f { font-size: 11px; color: #888; padding: 2px 0; font-family: monospace; }
+.arch-kit .f b { color: #aaa; }
+.arch-arrow { text-align: center; color: #fd7448; font-size: 20px; }
+.arch-projects { display: grid; gap: 8px; }
+.arch-proj { background: #111; border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.arch-proj .pname { font-size: 13px; color: #fff; font-weight: 600; }
+.arch-proj .pstack { font-size: 11px; color: #555; margin-top: 2px; }
+.arch-proj .phow { font-size: 10px; color: #fd7448; font-family: monospace; text-align: right; }
+
+/* Footer */
+.footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; }
+.footer-left { font-size: 12px; color: #444; }
+.footer-left b { color: #fd7448; }
+.footer-right { font-size: 11px; color: #333; font-family: monospace; }
+
+/* Open button */
+.open-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #fd7448; border-radius: 30px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; }
+.open-btn:hover { background: #eb633d; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <div class="dot"></div>
+    <div>
+      <h1>iDev UI Kit</h1>
+      <span>Брендбук · Дизайн-система · i-develop.tech</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="header-badge">Версия <b>1.0</b> · Апрель 2026</div>
+    <button class="open-btn" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');this.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'☀️ Светлая':'🌑 Тёмная'">☀️ Светлая</button>
+  </div>
+</div>
+
+<!-- 1. TOKENS -->
+<div class="section">
+  <h2><span class="num">1</span> Токены — единый источник правды</h2>
+
+  <h3>Цвета</h3>
+  <div class="color-grid">
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#1a191e"><div class="check">Aa</div></div>
+      <div class="color-body"><div class="color-name">bg-dark</div><div class="color-var">--bg-dark</div><div class="color-hex">#1a191e</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#2d2d2d"></div>
+      <div class="color-body"><div class="color-name">surface-dark</div><div class="color-var">--surface-dark</div><div class="color-hex">#2d2d2d</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#fd7448"></div>
+      <div class="color-body"><div class="color-name">accent</div><div class="color-var">--accent</div><div class="color-hex">#fd7448</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#eb633d"></div>
+      <div class="color-body"><div class="color-name">accent-hover</div><div class="color-var">--accent-hover</div><div class="color-hex">#eb633d</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#ffffff;border:1px solid #222"></div>
+      <div class="color-body"><div class="color-name">bg-light</div><div class="color-var">--bg-light</div><div class="color-hex">#ffffff</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#f5f5f5;border:1px solid #222"></div>
+      <div class="color-body"><div class="color-name">surface-light</div><div class="color-var">--surface-light</div><div class="color-hex">#f5f5f5</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#4ade80"></div>
+      <div class="color-body"><div class="color-name">success</div><div class="color-var">--success</div><div class="color-hex">#4ade80</div></div>
+    </div>
+    <div class="color-tile">
+      <div class="color-swatch" style="background:#f87171"></div>
+      <div class="color-body"><div class="color-name">danger</div><div class="color-var">--danger</div><div class="color-hex">#f87171</div></div>
+    </div>
+  </div>
+
+  <h3>Типографика</h3>
+  <table class="type-table">
+    <tr>
+      <td class="type-label">Display</td>
+      <td><span style="font-family:'Montserrat',sans-serif;font-size:32px;font-weight:800;color:#fff">iDevelop IT</span></td>
+      <td class="type-size">Montserrat 800 · 32px</td>
+    </tr>
+    <tr>
+      <td class="type-label">Heading 1</td>
+      <td><span style="font-family:'Montserrat',sans-serif;font-size:24px;font-weight:700;color:#fff">HR-система</span></td>
+      <td class="type-size">Montserrat 700 · 24px</td>
+    </tr>
+    <tr>
+      <td class="type-label">Heading 2</td>
+      <td><span style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:600;color:#ccc">Дашборд</span></td>
+      <td class="type-size">Montserrat 600 · 18px</td>
+    </tr>
+    <tr>
+      <td class="type-label">Body</td>
+      <td><span style="font-size:14px;color:#aaa">Кандидаты, сотрудники, партнёры</span></td>
+      <td class="type-size">System UI · 14px</td>
+    </tr>
+    <tr>
+      <td class="type-label">Caption</td>
+      <td><span style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px">ВСЕГО ЛЮДЕЙ</span></td>
+      <td class="type-size">System UI · 11px · UPPERCASE</td>
+    </tr>
+  </table>
+
+  <div style="margin-top:20px">
+    <h3>Скругления и отступы</h3>
+    <div class="space-row">
+      <div>
+        <div class="space-box" style="width:60px;height:60px;border-radius:30px"><span style="font-size:10px;color:#fd7448">30px</span></div>
+        <div class="space-label" style="color:#888;font-size:10px">r-lg<br>карточки</div>
+      </div>
+      <div>
+        <div class="space-box" style="width:60px;height:60px;border-radius:20px"><span style="font-size:10px;color:#fd7448">20px</span></div>
+        <div class="space-label" style="color:#888;font-size:10px">r-md<br>панели</div>
+      </div>
+      <div>
+        <div class="space-box" style="width:60px;height:60px;border-radius:12px"><span style="font-size:10px;color:#fd7448">12px</span></div>
+        <div class="space-label" style="color:#888;font-size:10px">r-sm<br>инпуты</div>
+      </div>
+      <div>
+        <div class="space-box" style="width:60px;height:60px;border-radius:30px"><span style="font-size:10px;color:#fd7448">∞</span></div>
+        <div class="space-label" style="color:#888;font-size:10px">pill<br>кнопки</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 2. COMPONENTS -->
+<div class="section">
+  <h2><span class="num">2</span> Компоненты</h2>
+  <div class="comp-grid">
+
+    <!-- DARK -->
+    <div class="comp-panel dark">
+      <div class="comp-panel-title">🌑 Dark theme</div>
+
+      <h3>Кнопки</h3>
+      <div class="btn-group">
+        <button class="btn btn-primary">Добавить</button>
+        <button class="btn btn-outline-dark">Экспорт</button>
+        <button class="btn btn-ghost-dark">Отмена</button>
+        <button class="btn btn-danger btn-sm">Удалить</button>
+      </div>
+
+      <h3>Бейджи</h3>
+      <div class="badge-group">
+        <span class="badge b-orange-d">Бенч</span>
+        <span class="badge b-green-d">На проекте</span>
+        <span class="badge b-yellow-d">Скрининг</span>
+        <span class="badge b-blue-d">Воронка</span>
+        <span class="badge b-red-d">Ушёл</span>
+        <span class="badge b-gray-d">Архив</span>
+      </div>
+
+      <h3>Метрики</h3>
+      <div class="stat-row">
+        <div class="stat-dark"><div class="stat-val" style="color:#fd7448">720</div><div class="stat-sub">Всего</div></div>
+        <div class="stat-dark"><div class="stat-val" style="color:#4ade80">8</div><div class="stat-sub">На проектах</div></div>
+        <div class="stat-dark"><div class="stat-val" style="color:#facc15">63</div><div class="stat-sub">Бенч</div></div>
+      </div>
+
+      <h3>Инпут</h3>
+      <input class="inp inp-dark" placeholder="Поиск по имени или стеку...">
+
+      <h3>Таблица</h3>
+      <div class="mini-table mini-table-dark">
+        <div class="t-head t-head-dark"><span>Сотрудник</span><span>Статус</span><span>Партнёр</span></div>
+        <div class="t-row t-row-dark"><span>Серж Кочарян</span><span><span class="badge b-green-d">На проекте</span></span><span>RedLab</span></div>
+        <div class="t-row t-row-dark"><span>Илья Ореховский</span><span><span class="badge b-orange-d">Бенч</span></span><span>Аксеникс</span></div>
+        <div class="t-row t-row-dark"><span>Равиля Каргын</span><span><span class="badge b-yellow-d">Скрининг</span></span><span>—</span></div>
+      </div>
+    </div>
+
+    <!-- LIGHT -->
+    <div class="comp-panel light">
+      <div class="comp-panel-title" style="color:#bbb">☀️ Light theme</div>
+
+      <h3 style="color:#bbb">Кнопки</h3>
+      <div class="btn-group">
+        <button class="btn btn-primary">Добавить</button>
+        <button class="btn btn-outline-light">Экспорт</button>
+        <button class="btn btn-ghost-light">Отмена</button>
+        <button class="btn btn-sm" style="background:#fef2f2;color:#ef4444">Удалить</button>
+      </div>
+
+      <h3 style="color:#bbb">Бейджи</h3>
+      <div class="badge-group">
+        <span class="badge b-orange-l">Бенч</span>
+        <span class="badge b-green-l">На проекте</span>
+        <span class="badge b-yellow-l">Скрининг</span>
+        <span class="badge b-blue-l">Воронка</span>
+        <span class="badge b-red-l">Ушёл</span>
+        <span class="badge b-gray-l">Архив</span>
+      </div>
+
+      <h3 style="color:#bbb">Метрики</h3>
+      <div class="stat-row">
+        <div class="stat-light"><div class="stat-val" style="color:#fd7448">720</div><div class="stat-sub">Всего</div></div>
+        <div class="stat-light"><div class="stat-val" style="color:#16a34a">8</div><div class="stat-sub">На проектах</div></div>
+        <div class="stat-light"><div class="stat-val" style="color:#d97706">63</div><div class="stat-sub">Бенч</div></div>
+      </div>
+
+      <h3 style="color:#bbb">Инпут</h3>
+      <input class="inp inp-light" placeholder="Поиск по имени или стеку...">
+
+      <h3 style="color:#bbb">Таблица</h3>
+      <div class="mini-table mini-table-light">
+        <div class="t-head t-head-light"><span>Сотрудник</span><span>Статус</span><span>Партнёр</span></div>
+        <div class="t-row t-row-light"><span>Серж Кочарян</span><span><span class="badge b-green-l">На проекте</span></span><span>RedLab</span></div>
+        <div class="t-row t-row-light"><span>Илья Ореховский</span><span><span class="badge b-orange-l">Бенч</span></span><span>Аксеникс</span></div>
+        <div class="t-row t-row-light"><span>Равиля Каргын</span><span><span class="badge b-yellow-l">Скрининг</span></span><span>—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 3. THEME -->
+<div class="section">
+  <h2><span class="num">3</span> Переключение тем</h2>
+  <div class="theme-code">
+<span class="tc-comment">/* tokens.css — единый файл для всех проектов */</span>
+
+<span class="tc-selector">:root</span> {
+  <span class="tc-comment">/* Общие для обеих тем */</span>
+  <span class="tc-prop">--accent</span>:        <span class="tc-val-shared">#fd7448</span>;
+  <span class="tc-prop">--accent-hover</span>:  <span class="tc-val-shared">#eb633d</span>;
+  <span class="tc-prop">--success</span>:       <span class="tc-val-shared">#4ade80</span>;
+  <span class="tc-prop">--danger</span>:        <span class="tc-val-shared">#f87171</span>;
+  <span class="tc-prop">--font</span>:          <span class="tc-val-shared">'Montserrat', system-ui, sans-serif</span>;
+  <span class="tc-prop">--r-lg</span>:          <span class="tc-val-shared">30px</span>;
+  <span class="tc-prop">--r-md</span>:          <span class="tc-val-shared">20px</span>;
+  <span class="tc-prop">--r-sm</span>:          <span class="tc-val-shared">12px</span>;
+  <span class="tc-prop">--container</span>:    <span class="tc-val-shared">min(1200px, calc(100% - 48px))</span>;
+}
+
+<span class="tc-selector">:root, [data-theme="light"]</span> {
+  <span class="tc-prop">--bg</span>:            <span class="tc-val-light">#ffffff</span>;
+  <span class="tc-prop">--surface</span>:       <span class="tc-val-light">#f5f5f5</span>;
+  <span class="tc-prop">--surface-2</span>:     <span class="tc-val-light">#ebebeb</span>;
+  <span class="tc-prop">--border</span>:        <span class="tc-val-light">#e5e5e5</span>;
+  <span class="tc-prop">--text</span>:          <span class="tc-val-light">#111111</span>;
+  <span class="tc-prop">--text-muted</span>:    <span class="tc-val-light">#666666</span>;
+}
+
+<span class="tc-selector">[data-theme="dark"]</span> {
+  <span class="tc-prop">--bg</span>:            <span class="tc-val-dark">#1a191e</span>;
+  <span class="tc-prop">--surface</span>:       <span class="tc-val-dark">#2d2d2d</span>;
+  <span class="tc-prop">--surface-2</span>:     <span class="tc-val-dark">#383838</span>;
+  <span class="tc-prop">--border</span>:        <span class="tc-val-dark">#3d3d3d</span>;
+  <span class="tc-prop">--text</span>:          <span class="tc-val-dark">#fefefe</span>;
+  <span class="tc-prop">--text-muted</span>:    <span class="tc-val-dark">#999999</span>;
+}
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 4. ARCHITECTURE -->
+<div class="section">
+  <h2><span class="num">4</span> Архитектура</h2>
+  <div class="arch">
+    <div class="arch-kit">
+      <h4>📦 /iDev/idev-ui</h4>
+      <div class="f">tokens/</div>
+      <div class="f" style="padding-left:12px">├ <b>tokens.css</b></div>
+      <div class="f" style="padding-left:12px">└ <b>tailwind.preset.js</b></div>
+      <div class="f" style="margin-top:8px">components/</div>
+      <div class="f" style="padding-left:12px">├ <b>Button.tsx</b></div>
+      <div class="f" style="padding-left:12px">├ <b>Badge.tsx</b></div>
+      <div class="f" style="padding-left:12px">├ <b>StatCard.tsx</b></div>
+      <div class="f" style="padding-left:12px">├ <b>DataTable.tsx</b></div>
+      <div class="f" style="padding-left:12px">└ <b>Input.tsx</b></div>
+      <div class="f" style="margin-top:8px">docs/</div>
+      <div class="f" style="padding-left:12px">└ <b>brandbook.html</b> ← вы здесь</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-projects">
+      <div class="arch-proj">
+        <div><div class="pname">idev-hr</div><div class="pstack">Next.js 16 · Tailwind</div></div>
+        <div class="phow">tailwind.preset.js + components</div>
+      </div>
+      <div class="arch-proj">
+        <div><div class="pname">idev-hr-demo</div><div class="pstack">Next.js 16 · Tailwind</div></div>
+        <div class="phow">tailwind.preset.js + components</div>
+      </div>
+      <div class="arch-proj">
+        <div><div class="pname">idev-website</div><div class="pstack">Vanilla HTML/CSS</div></div>
+        <div class="phow">&lt;link&gt; tokens.css</div>
+      </div>
+      <div class="arch-proj">
+        <div><div class="pname">ESS</div><div class="pstack">Django · staticfiles</div></div>
+        <div class="phow">tokens.css via staticfiles</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 5. RULES -->
+<div class="section">
+  <h2><span class="num">5</span> Правила применения — обязательные паттерны</h2>
+
+  <h3>Фон страниц</h3>
+  <div class="theme-code" style="margin-bottom:20px">
+<span class="tc-comment">/* ✅ Всегда — страница */</span>
+<span class="tc-selector">.page-wrapper</span> { <span class="tc-prop">background</span>: <span class="tc-val-shared">var(--bg)</span>; <span class="tc-comment">/* #fff light / #1a191e dark */</span> }
+
+<span class="tc-comment">/* ❌ Никогда для страниц */</span>
+<span class="tc-selector">.page-wrapper</span> { <span class="tc-prop">background</span>: <span class="tc-val-light">var(--surface)</span>; <span class="tc-comment">/* даёт светлую полосу в тёмной теме */</span> }
+
+<span class="tc-comment">/* Next.js — в layout или page.tsx */</span>
+<span class="tc-selector">&lt;div</span> className=<span class="tc-val-shared">"min-h-screen bg-[var(--bg)]"</span><span class="tc-selector">&gt;</span>  <span class="tc-comment">/* ✅ */</span>
+<span class="tc-selector">&lt;div</span> className=<span class="tc-val-light">"min-h-screen bg-[var(--surface)]"</span><span class="tc-selector">&gt;</span>  <span class="tc-comment">/* ❌ */</span>
+  </div>
+
+  <h3>Скилл-теги (навыки)</h3>
+  <div class="theme-code" style="margin-bottom:20px">
+<span class="tc-comment">/* ✅ Оранжевые — видны на любом фоне */</span>
+<span class="tc-selector">&lt;span</span> className=<span class="tc-val-shared">"bg-[var(--accent-soft)] text-[var(--accent)] rounded px-1.5 py-0.5 text-[10px]"</span><span class="tc-selector">&gt;</span>
+
+<span class="tc-comment">/* ❌ Серые — невидимы в тёмной теме */</span>
+<span class="tc-selector">&lt;span</span> className=<span class="tc-val-light">"bg-[var(--surface-2)] text-[var(--text-subtle)]"</span><span class="tc-selector">&gt;</span>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <span style="background:rgba(253,116,72,.12);color:#fd7448;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">BPMN</span>
+    <span style="background:rgba(253,116,72,.12);color:#fd7448;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">Agile</span>
+    <span style="background:rgba(253,116,72,.12);color:#fd7448;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">Kafka</span>
+    <span style="background:rgba(253,116,72,.12);color:#fd7448;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">PostgreSQL</span>
+    <span style="background:rgba(253,116,72,.12);color:#fd7448;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">+22</span>
+  </div>
+
+  <h3>Делители таблиц</h3>
+  <div class="theme-code" style="margin-bottom:20px">
+<span class="tc-comment">/* ✅ CSS var — адаптируется к теме */</span>
+<span class="tc-selector">&lt;tbody</span> className=<span class="tc-val-shared">"divide-y divide-[var(--border)]"</span><span class="tc-selector">&gt;</span>
+
+<span class="tc-comment">/* ❌ Хардкод — белые полосы в тёмной теме */</span>
+<span class="tc-selector">&lt;tbody</span> className=<span class="tc-val-light">"divide-y divide-gray-200"</span><span class="tc-selector">&gt;</span>
+  </div>
+
+  <h3>Цвета светлых фонов (badges, pills)</h3>
+  <div class="theme-code" style="margin-bottom:20px">
+<span class="tc-comment">/* ❌ Любые *-50 цвета — светлые в тёмной теме */</span>
+<span class="tc-selector">bg-blue-50</span>  →  <span class="tc-val-shared">bg-[var(--info-soft)]</span>
+<span class="tc-selector">bg-green-50</span> →  <span class="tc-val-shared">bg-[var(--success-soft)]</span>
+<span class="tc-selector">bg-orange-50</span>→  <span class="tc-val-shared">bg-[var(--accent-soft)]</span>
+<span class="tc-selector">bg-red-50</span>   →  <span class="tc-val-shared">bg-[var(--danger-soft)]</span>
+<span class="tc-selector">bg-yellow-50</span>→  <span class="tc-val-shared">bg-[var(--warning-soft)]</span>
+  </div>
+
+  <h3>Переключение тем — SSR без flash</h3>
+  <div class="theme-code" style="margin-bottom:20px">
+<span class="tc-comment">/* layout.tsx — обязательно для Next.js */</span>
+<span class="tc-selector">&lt;html</span> <span class="tc-prop">suppressHydrationWarning</span><span class="tc-selector">&gt;</span>  <span class="tc-comment">/* ← без этого будет hydration error */</span>
+  &lt;head&gt;
+    &lt;script dangerouslySetInnerHTML=<span class="tc-val-shared">{{ __html: themeInitScript }}</span> /&gt;
+  &lt;/head&gt;
+  &lt;body <span class="tc-prop">style=</span><span class="tc-val-shared">{{ background: 'var(--bg)', color: 'var(--text)' }}</span>&gt;
+    <span class="tc-comment">/* inline style вместо Tailwind — реагирует на runtime theme change */</span>
+  &lt;/body&gt;
+<span class="tc-selector">&lt;/html&gt;</span>
+  </div>
+
+  <h3>StatCard — стиль карточки</h3>
+  <div class="theme-code">
+<span class="tc-comment">/* Всегда совпадает с Card компонентом */</span>
+background: <span class="tc-val-shared">var(--bg)</span>;        <span class="tc-comment">/* НЕ surface — иначе темнее соседних карточек */</span>
+border-radius: <span class="tc-val-shared">0.5rem</span>;      <span class="tc-comment">/* совпадает с rounded-lg в Card */</span>
+border: <span class="tc-val-shared">1px solid var(--border)</span>;
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">iDev UI Kit · <b>v1.1</b> · Апрель 2026 · На основе i-develop.tech</div>
+  <div class="footer-right">/iDev/idev-ui/docs/brandbook.html</div>
+</div>
+
+</body>
+</html>

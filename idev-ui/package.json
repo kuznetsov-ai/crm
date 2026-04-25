@@ -1,0 +1,23 @@
+{
+  "name": "idev-ui",
+  "version": "1.0.0",
+  "description": "iDev shared design system",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./components/*": "./components/*.tsx",
+    "./theme/*": "./theme/*.tsx",
+    "./tokens/*": "./tokens/*"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  }
+}

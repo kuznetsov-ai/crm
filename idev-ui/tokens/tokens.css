@@ -1,0 +1,59 @@
+/* /iDev/idev-ui/tokens/tokens.css */
+
+/* ── Shared (both themes) ── */
+:root {
+  --accent:         #fd7448;
+  --accent-hover:   #eb633d;
+  --accent-soft:    rgba(253, 116, 72, 0.12);
+  --success:        #4ade80;
+  --success-soft:   rgba(74, 222, 128, 0.12);
+  --warning:        #facc15;
+  --warning-soft:   rgba(250, 204, 21, 0.10);
+  --danger:         #f87171;
+  --danger-soft:    rgba(239, 68, 68, 0.12);
+  --info:           #60a5fa;
+  --info-soft:      rgba(96, 165, 250, 0.12);
+
+  --font-brand:     'Montserrat', system-ui, sans-serif;
+  --font-body:      system-ui, -apple-system, sans-serif;
+
+  --r-lg:           10px;
+  --r-md:           8px;
+  --r-sm:           6px;
+  --r-pill:         9999px;
+
+  --container:      min(1200px, calc(100% - 48px));
+
+  --shadow-sm:      0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:      0 4px 12px rgba(0,0,0,.12);
+  --shadow-lg:      0 8px 24px rgba(0,0,0,.16);
+
+  --transition:     150ms ease;
+}
+
+/* ── Light theme (default) ── */
+:root,
+[data-theme="light"] {
+  --bg:             #ffffff;
+  --surface:        #f5f5f5;
+  --surface-2:      #ebebeb;
+  --border:         #e5e5e5;
+  --border-strong:  #d0d0d0;
+  --text:           #111111;
+  --text-muted:     #666666;
+  --text-subtle:    #999999;
+  --nav-bg:         rgba(255,255,255,0.95);
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --bg:             #1a191e;
+  --surface:        #2d2d2d;
+  --surface-2:      #383838;
+  --border:         #3d3d3d;
+  --border-strong:  #555555;
+  --text:           #fefefe;
+  --text-muted:     #999999;
+  --text-subtle:    #666666;
+  --nav-bg:         rgba(26,25,30,0.95);
+}

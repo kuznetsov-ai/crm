@@ -1,0 +1,116 @@
+@import "idev-ui/tokens/tokens.css";
+@import "tailwindcss";
+
+/* ── Token bridge: map idev-ui tokens → CRM component names ── */
+:root {
+  --bg-main:        var(--bg);
+  --bg-card:        var(--surface);
+  --bg-hover:       var(--surface-2);
+  --text-secondary: var(--text-muted);
+
+  --radius-xl:      8px;
+  --radius-lg:      var(--r-lg);
+  --radius-md:      var(--r-sm);
+}
+
+/* ── Tailwind v4 color aliases for idev-ui components ──
+   idev-ui uses Tailwind classes like bg-accent, text-text-muted
+   which in Tailwind v4 map to --color-* CSS vars ── */
+@theme {
+  --color-accent:        #fd7448;
+  --color-accent-hover:  #eb633d;
+  --color-accent-soft:   rgba(253, 116, 72, 0.12);
+  --color-success:       #4ade80;
+  --color-warning:       #facc15;
+  --color-danger:        #f87171;
+  --color-info:          #60a5fa;
+  --color-text:          var(--text);
+  --color-text-muted:    var(--text-muted);
+  --color-text-subtle:   var(--text-subtle);
+  --color-surface:       var(--surface);
+  --color-surface-2:     var(--surface-2);
+  --color-border:        var(--border);
+  --font-brand:          'Montserrat', system-ui, sans-serif;
+  --radius-sm:           var(--r-sm);
+  --radius-pill:         var(--r-pill);
+}
+
+/* ── Global resets ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+@keyframes msgHighlight {
+  0%   { background-color: rgba(253, 116, 72, 0.2); }
+  100% { background-color: transparent; }
+}
+.msg-highlight {
+  animation: msgHighlight 1.5s ease-out forwards;
+  border-radius: 12px;
+}
+
+/* ── Mobile anti-overflow defences ──
+   Prevent CSS Grid / Flex children from pushing the parent past viewport.
+   Applies under 860px, matches the AppLayout md: breakpoint Tailwind uses (768px),
+   plus a buffer for tablets in portrait. */
+@media (max-width: 860px) {
+  html, body {
+    overflow-x: hidden;
+  }
+  /* Default min-width:auto for grid/flex items lets a wide table push parent past viewport.
+     This forces them to actually shrink. */
+  main, main * {
+    min-width: 0;
+  }
+  /* Inline grid-template-columns are everywhere in CRM dashboards.
+     Flatten any 2-/3-column inline grid on phones so columns stack. */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Tables: allow horizontal scroll *inside* the wrapper, never the page. */
+  table {
+    min-width: 0;
+  }
+  /* Hide columns explicitly marked as non-essential on phones. */
+  .col-hide-mobile {
+    display: none !important;
+  }
+  /* Modals/dialogs: stay within viewport. */
+  [role="dialog"], .modal, .sc-modal {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 32px);
+  }
+}
+
+/* Tables — always wrap in a horizontal scroller. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
