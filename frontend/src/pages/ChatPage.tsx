@@ -115,9 +115,8 @@ function AttachmentBubble({ url, name, size, mime, onOpenImage }: AttachmentBubb
 }
 
 interface CtxMenu {
-  x: number
-  y: number
   msg: ChatMessage
+  rect: { top: number; bottom: number; left: number; right: number; width: number }
 }
 
 interface WorkspaceMember {
@@ -702,26 +701,38 @@ export default function ChatPage() {
     setTimeout(() => inputRef.current?.focus(), 0)
   }
 
-  const handleContextMenu = (e: React.MouseEvent, msg: ChatMessage) => {
-    e.preventDefault()
-    const menuW = 200, menuH = 280
-    const x = Math.min(e.clientX, window.innerWidth - menuW - 8)
-    const y = Math.min(e.clientY, window.innerHeight - menuH - 8)
-    setCtxMenu({ x, y, msg })
+  // Anchor the context menu to the BUBBLE, not the click coordinates.
+  // The menu has two parts (Telegram-style):
+  //   - reaction picker rendered ABOVE the bubble
+  //   - actions list rendered BELOW the bubble
+  const captureBubbleRect = (target: HTMLElement | null) => {
+    // Find the closest bubble element (the .group wrapper has the message anchor)
+    const node = target?.closest<HTMLElement>("[id^='msg-']")
+    const r = (node ?? target)?.getBoundingClientRect()
+    if (!r) return null
+    return {
+      top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width,
+    }
   }
 
-  // Long-press (touch ≥ 500ms) opens the context menu (same as right-click).
+  const handleContextMenu = (e: React.MouseEvent, msg: ChatMessage) => {
+    e.preventDefault()
+    const rect = captureBubbleRect(e.currentTarget as HTMLElement)
+    if (!rect) return
+    setCtxMenu({ msg, rect })
+  }
+
+  // Long-press (touch ≥ 500ms) opens the context menu.
   // Double-tap (two taps within 300ms) opens the reaction quick-picker.
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastTapAtRef = useRef<{ msgId: number; t: number; x: number; y: number } | null>(null)
+  const lastTapAtRef = useRef<{ msgId: number; t: number } | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent, msg: ChatMessage) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
-    const touch = e.touches[0]
-    const x = Math.min(touch.clientX, window.innerWidth - 220)
-    const y = Math.min(touch.clientY, window.innerHeight - 280)
+    const target = e.currentTarget as HTMLElement
+    const rect = captureBubbleRect(target)
     longPressTimer.current = setTimeout(() => {
-      setCtxMenu({ x, y, msg })
+      if (rect) setCtxMenu({ msg, rect })
       longPressTimer.current = null
     }, 500)
 
@@ -729,16 +740,17 @@ export default function ChatPage() {
     const now = Date.now()
     const last = lastTapAtRef.current
     if (last && last.msgId === msg.id && now - last.t < 300) {
-      // Confirmed double-tap — cancel long-press, open reaction picker
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
       lastTapAtRef.current = null
-      setReactPickerFor({
-        msgId: msg.id,
-        x: Math.max(8, Math.min(touch.clientX - 110, window.innerWidth - 240)),
-        y: Math.max(8, touch.clientY - 60),
-      })
+      if (rect) {
+        setReactPickerFor({
+          msgId: msg.id,
+          x: Math.max(8, Math.min(rect.left, window.innerWidth - 280)),
+          y: Math.max(8, rect.top - 56),
+        })
+      }
     } else {
-      lastTapAtRef.current = { msgId: msg.id, t: now, x: touch.clientX, y: touch.clientY }
+      lastTapAtRef.current = { msgId: msg.id, t: now }
     }
   }
   const handleTouchEnd = () => {
@@ -1278,7 +1290,7 @@ export default function ChatPage() {
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={`group flex gap-2 ${isOwn ? 'flex-row-reverse' : ''} ${sameAuthor ? 'mt-0.5' : 'mt-3'}`}
+                    className={`group flex gap-2 ${isOwn ? 'flex-row-reverse' : ''} ${sameAuthor ? 'mt-0.5' : 'mt-3'} ${ctxMenu?.msg.id === msg.id ? 'relative z-50' : ''}`}
                     onContextMenu={(e) => handleContextMenu(e, msg)}
                     onTouchStart={(e) => handleTouchStart(e, msg)}
                     onTouchEnd={handleTouchEnd}
@@ -1598,43 +1610,94 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* ── Context menu ── */}
-      {ctxMenu && (
-        <div
-          ref={ctxRef}
-          className="fixed z-50 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.18)] py-1 w-52 overflow-hidden"
-          style={{ top: ctxMenu.y, left: ctxMenu.x }}
-        >
-          <div className="flex items-center justify-around px-3 py-2 border-b border-[var(--border)]">
-            {QUICK_EMOJIS.map((emoji) => (
-              <button key={emoji} onClick={() => ctxReact(emoji)} className="text-lg hover:scale-125 transition-transform active:scale-95">{emoji}</button>
-            ))}
-          </div>
-          {(() => {
-            const own = ctxMenu.msg.author?.id === user?.id
-            const items: { icon: string; label: string; action: () => void; danger?: boolean }[] = [
-              { icon: '↩', label: t('chat.reply'), action: ctxReply },
-              { icon: '⤴', label: t('chat.forward'), action: ctxForward },
-              { icon: '📌', label: pinnedIds.has(ctxMenu.msg.id) ? t('chat.unpin') : t('chat.pin'), action: ctxPin },
-              { icon: '📋', label: t('chat.copy'), action: ctxCopy },
-            ]
-            if (own) {
-              items.push({ icon: '✏', label: 'Edit', action: ctxEdit })
-              items.push({ icon: '🗑', label: 'Delete', action: ctxDelete, danger: true })
-            }
-            return items.map(({ icon, label, action, danger }) => (
-              <button
-                key={label}
-                onClick={action}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[var(--bg-hover)] transition-colors text-left ${danger ? 'text-[var(--danger,#FF6B6B)]' : 'text-[var(--text)]'}`}
-              >
-                <span className="text-base w-5 text-center">{icon}</span>
-                {label}
-              </button>
-            ))
-          })()}
-        </div>
-      )}
+      {/* ── Context menu — Telegram-style: backdrop + reaction bar above the bubble + actions below ── */}
+      {ctxMenu && (() => {
+        const own = ctxMenu.msg.author?.id === user?.id
+        const items: { icon: string; label: string; action: () => void; danger?: boolean }[] = [
+          { icon: '↩', label: t('chat.reply'), action: ctxReply },
+          { icon: '⤴', label: t('chat.forward'), action: ctxForward },
+          { icon: '📌', label: pinnedIds.has(ctxMenu.msg.id) ? t('chat.unpin') : t('chat.pin'), action: ctxPin },
+          { icon: '📋', label: t('chat.copy'), action: ctxCopy },
+        ]
+        if (own) {
+          items.push({ icon: '✏', label: 'Edit', action: ctxEdit })
+          items.push({ icon: '🗑', label: 'Delete', action: ctxDelete, danger: true })
+        }
+
+        // Layout — picker above, actions below the bubble
+        const PICKER_H = 44
+        const ACTION_H = items.length * 42 + 8
+        const MARGIN = 8
+        const vh = window.innerHeight
+        // Try to render below; if no room — flip above
+        let actionTop = ctxMenu.rect.bottom + MARGIN
+        if (actionTop + ACTION_H > vh - 16) {
+          actionTop = Math.max(16, ctxMenu.rect.top - ACTION_H - MARGIN)
+        }
+        let pickerTop = ctxMenu.rect.top - PICKER_H - MARGIN
+        if (pickerTop < 16) pickerTop = ctxMenu.rect.bottom + MARGIN
+
+        // Horizontal: picker + menu align to the message edge (own → right edge, others → left edge)
+        const PICKER_W = 7 * 36 + 16
+        const ACTION_W = 220
+        const pickerLeft = own
+          ? Math.max(8, Math.min(ctxMenu.rect.right - PICKER_W, window.innerWidth - PICKER_W - 8))
+          : Math.max(8, Math.min(ctxMenu.rect.left, window.innerWidth - PICKER_W - 8))
+        const actionLeft = own
+          ? Math.max(8, Math.min(ctxMenu.rect.right - ACTION_W, window.innerWidth - ACTION_W - 8))
+          : Math.max(8, Math.min(ctxMenu.rect.left, window.innerWidth - ACTION_W - 8))
+
+        return (
+          <>
+            {/* Backdrop — closes the menu, dims the rest */}
+            <div
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+              onClick={() => setCtxMenu(null)}
+              onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}
+            />
+
+            {/* Reaction bar */}
+            <div
+              ref={ctxRef}
+              className="fixed z-50 flex items-center gap-1 px-2 py-1.5 rounded-full bg-[var(--bg-card-solid,var(--bg-card))] border border-[var(--border)] shadow-[0_8px_32px_rgba(0,0,0,0.32)]"
+              style={{ top: pickerTop, left: pickerLeft }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {QUICK_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => ctxReact(emoji)}
+                  className="text-xl leading-none w-8 h-8 flex items-center justify-center hover:scale-125 active:scale-95 transition-transform"
+                  aria-label={`React with ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Action menu */}
+            <div
+              className="fixed z-50 bg-[var(--bg-card-solid,var(--bg-card))] border border-[var(--border)] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.32)] py-1 overflow-hidden"
+              style={{ top: actionTop, left: actionLeft, width: ACTION_W }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {items.map(({ icon, label, action, danger }) => (
+                <button
+                  key={label}
+                  onClick={action}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[var(--bg-hover)] transition-colors text-left ${danger ? 'text-[var(--danger,#FF6B6B)]' : 'text-[var(--text)]'}`}
+                >
+                  <span className="text-base w-5 text-center">{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )
+      })()}
 
       {/* ── Inline reaction quick-pick ── */}
       {reactPickerFor && (
