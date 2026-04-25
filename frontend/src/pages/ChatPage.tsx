@@ -788,20 +788,33 @@ export default function ChatPage() {
     })
   }
 
+  // Optimistic toggle: flip the local state synchronously, fire REST in the background.
+  // On failure, reload from server to recover. Mirrors Telegram's instant-feedback feel.
+  const optimisticReact = useCallback((msgId: number, emoji: string) => {
+    if (!user) return
+    setMessages((prev) => prev.map((m) => {
+      if (m.id !== msgId) return m
+      const mine = m.reactions.find((r) => r.emoji === emoji && r.user?.id === user.id)
+      if (mine) {
+        return { ...m, reactions: m.reactions.filter((r) => r.id !== mine.id) }
+      }
+      const stub = {
+        id: -Date.now(),
+        emoji,
+        user: { id: user.id, email: user.email, full_name: user.full_name, avatar: user.avatar ?? null },
+      } as ChatReaction
+      return { ...m, reactions: [...m.reactions, stub] }
+    }))
+    chatApi.messages.react(msgId, emoji).catch(() => {
+      if (activeChannelId) chatApi.messages.list(activeChannelId).then(setMessages)
+    })
+  }, [user, activeChannelId])
+
   const reactPickerSend = (emoji: string) => {
     if (!reactPickerFor) return
     const msgId = reactPickerFor.msgId
     setReactPickerFor(null)
-    // REST is reliable; backend broadcasts via WS so other peers get the update.
-    chatApi.messages.react(msgId, emoji)
-      .then(() => {
-        // Optimistic local refresh — handleReaction will also fire when WS broadcast arrives
-        if (activeChannelId) chatApi.messages.list(activeChannelId).then(setMessages)
-      })
-      .catch(() => {
-        // Last-resort fallback to WS
-        sendReaction(msgId, emoji)
-      })
+    optimisticReact(msgId, emoji)
   }
 
   const ctxReply = () => { if (!ctxMenu) return; setReplyTo(ctxMenu.msg); setCtxMenu(null) }
@@ -818,9 +831,7 @@ export default function ChatPage() {
     if (!ctxMenu) return
     const msgId = ctxMenu.msg.id
     setCtxMenu(null)
-    chatApi.messages.react(msgId, emoji)
-      .then(() => activeChannelId && chatApi.messages.list(activeChannelId).then(setMessages))
-      .catch(() => sendReaction(msgId, emoji))  // WS fallback if REST fails
+    optimisticReact(msgId, emoji)
   }
   const ctxEdit = () => { if (!ctxMenu) return; setEditingId(ctxMenu.msg.id); setEditingText(ctxMenu.msg.text); setCtxMenu(null) }
   const ctxDelete = async () => {
@@ -1413,9 +1424,7 @@ export default function ChatPage() {
                               <button
                                 key={emoji}
                                 type="button"
-                                onClick={() => chatApi.messages.react(msg.id, emoji)
-                                  .then(() => activeChannelId && chatApi.messages.list(activeChannelId).then(setMessages))
-                                  .catch(() => {})}
+                                onClick={() => optimisticReact(msg.id, emoji)}
                                 className={`text-xs rounded-full px-1.5 py-0.5 transition-colors ${
                                   mine
                                     ? 'bg-[var(--accent)]/20 border border-[var(--accent)] text-[var(--accent)]'
