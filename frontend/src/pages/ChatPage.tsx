@@ -1349,7 +1349,11 @@ export default function ChatPage() {
                           type="button"
                           aria-label="Add reaction"
                           title="Add reaction"
-                          onClick={(e) => openReactionPickerForMessage(msg, e.currentTarget)}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openReactionPickerForMessage(msg, e.currentTarget)
+                          }}
                           className="text-sm leading-none w-7 h-7 flex items-center justify-center rounded-full bg-[var(--bg-hover)]/60 border border-[var(--border)] hover:bg-[var(--bg-hover)] hover:border-[var(--accent)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors md:opacity-0 md:group-hover:opacity-100"
                         >
                           🙂+
