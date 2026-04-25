@@ -1,0 +1,146 @@
+/* ekuznetsov.dev — Design System
+   Tokens · v1.0 · April 2026
+   Author: Evgenii Kuznetsov
+*/
+
+:root {
+  /* ─── Palette: Orange Warm (default) ─────────────────────── */
+  --color-bg:        #06080B;
+  --color-bg-deep:   #03050A;
+  --color-panel:     rgba(8, 14, 22, 0.7);
+  --color-grid:      rgba(255, 200, 150, 0.05);
+  --color-border:    rgba(255, 180, 120, 0.18);
+
+  --color-text:      #E8DDD0;
+  --color-text-dim:  rgba(232, 221, 208, 0.55);
+
+  --color-accent:    #FF8A3D;   /* primary — orange */
+  --color-blue:      #5AA9FF;   /* tech / info */
+  --color-green:     #5DD39E;   /* eco / success */
+  --color-violet:    #AA6EFF;   /* travel / detail */
+
+  --glow-a: rgba(255, 138, 61, 0.18);
+  --glow-b: rgba(170, 110, 255, 0.10);
+  --glow-c: rgba(93, 211, 158, 0.08);
+
+  /* ─── Type ───────────────────────────────────────────────── */
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Type scale (modular, 1.250) */
+  --fs-10:  10px;
+  --fs-11:  11px;
+  --fs-12:  12px;
+  --fs-13:  13px;
+  --fs-14:  14px;
+  --fs-16:  16px;
+  --fs-22:  22px;
+  --fs-28:  28px;
+  --fs-36:  36px;
+  --fs-44:  44px;
+  --fs-56:  56px;
+  --fs-72:  72px;
+  --fs-96:  96px;
+  --fs-112: 112px;
+
+  /* Tracking */
+  --track-tight: -0.035em;
+  --track-base:   0;
+  --track-wide:   0.05em;
+  --track-mono:   0.1em;
+
+  /* Line height */
+  --lh-tight: 0.95;
+  --lh-snug:  1.15;
+  --lh-base:  1.55;
+  --lh-loose: 1.85;
+
+  /* ─── Spacing (4-pt) ─────────────────────────────────────── */
+  --s-0: 0px;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+  --s-24: 96px;
+
+  /* ─── Radii ──────────────────────────────────────────────── */
+  --r-none: 0;
+  --r-xs:   2px;
+  --r-sm:   4px;
+  --r-md:   6px;
+
+  /* ─── Borders ────────────────────────────────────────────── */
+  --bd-1: 1px solid var(--color-border);
+  --bd-accent: 1px solid var(--color-accent);
+
+  /* ─── Effects ────────────────────────────────────────────── */
+  --shadow-glow: 0 0 0 1px var(--color-border) inset, 0 30px 80px rgba(0,0,0,0.6);
+  --blur-panel: blur(10px);
+
+  /* ─── Motion ─────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 380ms;
+}
+
+/* ─── Palette: Blue Cool ──────────────────────────────────── */
+[data-palette="blue-cool"] {
+  --color-bg:        #06080B;
+  --color-bg-deep:   #03050A;
+  --color-panel:     rgba(8, 14, 22, 0.7);
+  --color-grid:      rgba(120, 160, 200, 0.06);
+  --color-border:    rgba(120, 160, 200, 0.22);
+  --color-text:      #C8D6DF;
+  --color-text-dim:  rgba(200, 214, 223, 0.55);
+  --color-accent:    #5AA9FF;
+  --color-blue:      #5AA9FF;
+  --color-green:     #5DD39E;
+  --color-violet:    #AA6EFF;
+  --glow-a: rgba(60, 120, 255, 0.18);
+  --glow-b: rgba(40, 200, 140, 0.10);
+  --glow-c: rgba(170, 110, 255, 0.10);
+}
+
+/* ─── Palette: Violet Dawn ────────────────────────────────── */
+[data-palette="violet-dawn"] {
+  --color-bg:        #0B0814;
+  --color-bg-deep:   #04030A;
+  --color-panel:     rgba(20, 12, 40, 0.6);
+  --color-grid:      rgba(170, 110, 255, 0.06);
+  --color-border:    rgba(170, 110, 255, 0.25);
+  --color-text:      #E0D6F0;
+  --color-text-dim:  rgba(224, 214, 240, 0.55);
+  --color-accent:    #AA6EFF;
+  --color-blue:      #5AA9FF;
+  --color-green:     #5DD39E;
+  --color-violet:    #D38BFF;
+  --glow-a: rgba(170, 110, 255, 0.22);
+  --glow-b: rgba(255, 138, 61, 0.10);
+  --glow-c: rgba(90, 169, 255, 0.10);
+}
+
+/* ─── Palette: Matcha ─────────────────────────────────────── */
+[data-palette="matcha"] {
+  --color-bg:        #05090B;
+  --color-bg-deep:   #020608;
+  --color-panel:     rgba(6, 16, 18, 0.6);
+  --color-grid:      rgba(120, 200, 160, 0.06);
+  --color-border:    rgba(120, 200, 160, 0.22);
+  --color-text:      #D5E8DC;
+  --color-text-dim:  rgba(213, 232, 220, 0.55);
+  --color-accent:    #5DD39E;
+  --color-blue:      #5AA9FF;
+  --color-green:     #5DD39E;
+  --color-violet:    #AA6EFF;
+  --glow-a: rgba(60, 200, 140, 0.16);
+  --glow-b: rgba(90, 169, 255, 0.10);
+  --glow-c: rgba(255, 138, 61, 0.08);
+}

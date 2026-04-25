@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ekuznetsov.dev — Design System v1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="components.css" />
+<style>
+  body { padding: 0; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 56px; position: relative; z-index: 10; }
+  .ds-hero {
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: end;
+    padding-bottom: 48px; border-bottom: var(--bd-1);
+  }
+  .ds-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 32px; padding-top: 24px; border-top: var(--bd-1); }
+  .ds-meta__item { font-family: var(--font-mono); font-size: var(--fs-11); }
+  .ds-meta__k { color: var(--color-text-dim); letter-spacing: var(--track-mono); text-transform: uppercase; font-size: var(--fs-10); margin-bottom: 4px; }
+
+  .ds-section { padding-top: 80px; }
+  .ds-grid { display: grid; gap: 16px; }
+  .ds-grid--3 { grid-template-columns: repeat(3, 1fr); }
+  .ds-grid--4 { grid-template-columns: repeat(4, 1fr); }
+  .ds-grid--6 { grid-template-columns: repeat(6, 1fr); }
+
+  .swatch { padding: 0; border: var(--bd-1); }
+  .swatch__chip { height: 110px; }
+  .swatch__meta { padding: 12px 14px; font-family: var(--font-mono); font-size: var(--fs-11); }
+  .swatch__name { color: var(--color-text); font-size: var(--fs-13); margin-bottom: 6px; }
+  .swatch__row { display: flex; justify-content: space-between; opacity: 0.65; padding: 1px 0; }
+
+  .typespec { padding: 24px 0; border-bottom: var(--bd-1); }
+  .typespec:last-child { border-bottom: none; }
+  .typespec__meta { font-family: var(--font-mono); font-size: var(--fs-10); letter-spacing: var(--track-mono); color: var(--color-text-dim); margin-bottom: 14px; text-transform: uppercase; }
+
+  .scale-row { display: flex; gap: 16px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--color-border); }
+  .scale-row__token { width: 80px; color: var(--color-text-dim); font-family: var(--font-mono); font-size: var(--fs-11); }
+  .scale-row__sample { flex: 1; }
+  .scale-row__px { width: 70px; text-align: right; font-family: var(--font-mono); font-size: var(--fs-10); color: var(--color-text-dim); }
+
+  .space-bar { background: var(--color-accent); height: 16px; }
+
+  .demo-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 12px 0; }
+
+  .palette-toggle { display: flex; gap: 8px; flex-wrap: wrap; padding: 16px 0; }
+  .palette-toggle button {
+    background: transparent; color: var(--color-text);
+    border: var(--bd-1); padding: 8px 14px;
+    font-family: var(--font-mono); font-size: var(--fs-11);
+    letter-spacing: var(--track-mono); cursor: pointer;
+    transition: all var(--dur-base);
+  }
+  .palette-toggle button:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .palette-toggle button.active { background: var(--color-accent); color: var(--color-bg); border-color: var(--color-accent); }
+
+  .anatomy { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .anatomy code {
+    background: var(--color-bg-deep); padding: 2px 6px;
+    color: var(--color-accent); font-size: var(--fs-11);
+  }
+
+  .toc {
+    position: sticky; top: 24px; align-self: start;
+    font-family: var(--font-mono); font-size: var(--fs-11);
+    padding: 16px 0; border-left: 1px solid var(--color-border); padding-left: 16px;
+  }
+  .toc a { display: block; color: var(--color-text-dim); text-decoration: none; padding: 4px 0; transition: color 200ms; }
+  .toc a:hover { color: var(--color-accent); }
+  .layout { display: grid; grid-template-columns: 180px 1fr; gap: 56px; }
+
+  pre.code {
+    background: var(--color-bg-deep);
+    border: var(--bd-1);
+    padding: 16px 20px;
+    font-family: var(--font-mono); font-size: var(--fs-11);
+    line-height: 1.7;
+    color: var(--color-text);
+    overflow-x: auto;
+  }
+  .k { color: var(--color-violet); }
+  .s { color: var(--color-green); }
+  .c { color: var(--color-text-dim); font-style: italic; }
+  .p { color: var(--color-accent); }
+
+  .download-card {
+    margin-top: 16px;
+    background: linear-gradient(140deg, color-mix(in srgb, var(--color-accent) 25%, transparent), transparent);
+    border: 1px solid var(--color-accent);
+    padding: 24px 28px;
+    display: flex; gap: 24px; align-items: center; justify-content: space-between;
+  }
+</style>
+</head>
+<body class="eds-bg-glow">
+<div class="eds-bg-grid" style="position:fixed;inset:0;z-index:0;mask-image:radial-gradient(ellipse at center, black 30%, transparent 80%);"></div>
+<div class="eds-scanlines"></div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <header class="ds-hero">
+    <div>
+      <div class="eds-mono-label" style="margin-bottom: 16px;">// EVGENII KUZNETSOV · DESIGN SYSTEM · V1.0 · APRIL 2026</div>
+      <div class="eds-display">
+        terminal<span style="color: var(--color-accent);">.</span>dev
+      </div>
+      <div class="eds-body" style="margin-top: 24px; max-width: 540px; opacity: 0.85;">
+        A monospace, terminal-flavored design system for engineering portfolios that don't apologize.
+        Designed for ekuznetsov.dev — Paris↔Tokyo, AI engineering, slow-travel ethics.
+      </div>
+    </div>
+    <div class="eds-panel">
+      <div class="eds-mono-label" style="margin-bottom: 12px;">// system.spec</div>
+      <div class="eds-kv"><span class="eds-kv__k">version</span><span class="eds-kv__v" style="color: var(--color-green);">1.0.0</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">palettes</span><span class="eds-kv__v">4 (warm/cool/violet/matcha)</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">type</span><span class="eds-kv__v">JetBrains Mono · Inter</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">scale</span><span class="eds-kv__v">10 → 112 px</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">grid</span><span class="eds-kv__v">4-pt · 0 → 96 px</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">radii</span><span class="eds-kv__v">0 → 6 px (low)</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">tokens</span><span class="eds-kv__v" style="color: var(--color-violet);">tokens.css</span></div>
+      <div class="eds-kv"><span class="eds-kv__k">components</span><span class="eds-kv__v" style="color: var(--color-violet);">components.css</span></div>
+    </div>
+  </header>
+
+  <div class="ds-meta">
+    <div class="ds-meta__item"><div class="ds-meta__k">author</div>Evgenii Kuznetsov</div>
+    <div class="ds-meta__item"><div class="ds-meta__k">site</div>ekuznetsov.dev</div>
+    <div class="ds-meta__item"><div class="ds-meta__k">license</div>MIT · use freely</div>
+    <div class="ds-meta__item"><div class="ds-meta__k">vibe</div>premium tech · slow software</div>
+  </div>
+
+  <div class="layout" style="margin-top: 64px;">
+    <nav class="toc">
+      <div class="eds-mono-label" style="margin-bottom: 12px;">// CONTENTS</div>
+      <a href="#palettes">01 · Palettes</a>
+      <a href="#type">02 · Typography</a>
+      <a href="#spacing">03 · Spacing</a>
+      <a href="#components">04 · Components</a>
+      <a href="#tokens">05 · Tokens</a>
+      <a href="#use">06 · Usage</a>
+    </nav>
+
+    <main>
+
+      <!-- Palettes -->
+      <section id="palettes" class="ds-section">
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">01</span>
+          <span class="eds-sechead__title">// palettes</span>
+          <span class="eds-sechead__sub">4 themes · same tokens, different mood</span>
+        </div>
+
+        <div class="palette-toggle" id="palette-toggle">
+          <button class="active" data-p="orange-warm">orange-warm</button>
+          <button data-p="blue-cool">blue-cool</button>
+          <button data-p="violet-dawn">violet-dawn</button>
+          <button data-p="matcha">matcha</button>
+        </div>
+
+        <div class="ds-grid ds-grid--6" style="margin-top: 16px;">
+          <div class="swatch"><div class="swatch__chip" style="background: var(--color-bg);"></div>
+            <div class="swatch__meta">
+              <div class="swatch__name">--color-bg</div>
+              <div class="swatch__row"><span>role</span><span>surface</span></div>
+              <div class="swatch__row"><span>hex</span><span id="hex-bg">—</span></div>
+            </div></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--color-text);"></div>
+            <div class="swatch__meta">
+              <div class="swatch__name">--color-text</div>
+              <div class="swatch__row"><span>role</span><span>foreground</span></div>
+              <div class="swatch__row"><span>hex</span><span id="hex-text">—</span></div>
+            </div></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--color-accent);"></div>
+            <div class="swatch__meta">
+              <div class="swatch__name">--color-accent</div>
+              <div class="swatch__row"><span>role</span><span>primary</span></div>
+              <div class="swatch__row"><span>hex</span><span id="hex-accent">—</span></div>
+            </div></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--color-blue);"></div>
+            <div class="swatch__meta">
+              <div class="swatch__name">--color-blue</div>
+              <div class="swatch__row"><span>role</span><span>info / tech</span></div>
+              <div class="swatch__row"><span>hex</span><span>5AA9FF</span></div>
+            </div></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--color-green);"></div>
+            <div class="swatch__meta">
+              <div class="swatch__name">--color-green</div>
+              <div class="swatch__row"><span>role</span><span>eco / success</span></div>
+              <div class="swatch__row"><span>hex</span><span>5DD39E</span></div>
+            </div></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--color-violet);"></div>
+            <div class="swatch__meta">
+              <div class="swatch__name">--color-violet</div>
+              <div class="swatch__row"><span>role</span><span>travel / detail</span></div>
+              <div class="swatch__row"><span>hex</span><span>AA6EFF</span></div>
+            </div></div>
+        </div>
+      </section>
+
+      <!-- Typography -->
+      <section id="type" class="ds-section">
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">02</span>
+          <span class="eds-sechead__title">// typography</span>
+          <span class="eds-sechead__sub">JetBrains Mono · Inter</span>
+        </div>
+
+        <div class="typespec">
+          <div class="typespec__meta">.eds-display · 96–112px · weight 500 · −0.035em</div>
+          <div class="eds-display">EVGENII<span style="color: var(--color-accent);">_</span></div>
+        </div>
+        <div class="typespec">
+          <div class="typespec__meta">.eds-h1 · 56px · weight 600</div>
+          <div class="eds-h1">A career, a city or two.</div>
+        </div>
+        <div class="typespec">
+          <div class="typespec__meta">.eds-h2 · 36px · weight 500</div>
+          <div class="eds-h2">Building the boring parts of intelligent systems.</div>
+        </div>
+        <div class="typespec">
+          <div class="typespec__meta">.eds-h3 · 22px · weight 500</div>
+          <div class="eds-h3">Recent deploys</div>
+        </div>
+        <div class="typespec">
+          <div class="typespec__meta">.eds-body · 14px · 1.55</div>
+          <div class="eds-body" style="max-width: 640px;">I build retrieval, evals, training infra, and agent loops so the interesting parts can ship. Long-haul flights and meat are the dominant terms — bamboo cutlery is not.</div>
+        </div>
+        <div class="typespec">
+          <div class="typespec__meta">.eds-mono-label · 10px · 0.1em · uppercase</div>
+          <div class="eds-mono-label">// SYSTEM STATUS · BUILD 2026.04.25</div>
+        </div>
+        <div class="typespec">
+          <div class="typespec__meta">.eds-prompt + code</div>
+          <div class="eds-body" style="font-family: var(--font-mono);"><span class="eds-prompt"></span>traceroute -e --rail tokyo</div>
+        </div>
+
+        <div style="margin-top: 32px;">
+          <div class="eds-mono-label" style="margin-bottom: 12px;">// SCALE</div>
+          <div class="scale-row"><span class="scale-row__token">--fs-112</span><span class="scale-row__sample" style="font-size: 96px; line-height: 1;">Aa</span><span class="scale-row__px">112 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-72</span><span class="scale-row__sample" style="font-size: 72px; line-height: 1;">Aa</span><span class="scale-row__px">72 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-56</span><span class="scale-row__sample" style="font-size: 56px; line-height: 1;">Aa</span><span class="scale-row__px">56 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-36</span><span class="scale-row__sample" style="font-size: 36px;">Aa</span><span class="scale-row__px">36 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-22</span><span class="scale-row__sample" style="font-size: 22px;">Aa</span><span class="scale-row__px">22 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-16</span><span class="scale-row__sample" style="font-size: 16px;">Aa</span><span class="scale-row__px">16 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-14</span><span class="scale-row__sample" style="font-size: 14px;">Aa</span><span class="scale-row__px">14 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-12</span><span class="scale-row__sample" style="font-size: 12px;">Aa</span><span class="scale-row__px">12 px</span></div>
+          <div class="scale-row"><span class="scale-row__token">--fs-10</span><span class="scale-row__sample" style="font-size: 10px;">Aa</span><span class="scale-row__px">10 px</span></div>
+        </div>
+      </section>
+
+      <!-- Spacing -->
+      <section id="spacing" class="ds-section">
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">03</span>
+          <span class="eds-sechead__title">// spacing &amp; radii</span>
+          <span class="eds-sechead__sub">4-pt grid · low radii</span>
+        </div>
+
+        <div class="ds-grid ds-grid--4">
+          <div><div class="space-bar" style="width: 4px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-1 · 4px</div></div>
+          <div><div class="space-bar" style="width: 8px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-2 · 8px</div></div>
+          <div><div class="space-bar" style="width: 16px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-4 · 16px</div></div>
+          <div><div class="space-bar" style="width: 24px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-6 · 24px</div></div>
+          <div><div class="space-bar" style="width: 32px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-8 · 32px</div></div>
+          <div><div class="space-bar" style="width: 48px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-12 · 48px</div></div>
+          <div><div class="space-bar" style="width: 64px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-16 · 64px</div></div>
+          <div><div class="space-bar" style="width: 96px;"></div><div class="eds-mono-label" style="margin-top:8px;">--s-24 · 96px</div></div>
+        </div>
+
+        <div class="eds-mono-label" style="margin: 32px 0 12px;">// RADII (intentionally minimal — terminals don't round)</div>
+        <div class="demo-row">
+          <div style="width: 60px; height: 60px; background: var(--color-accent); border-radius: 0;"></div>
+          <div style="width: 60px; height: 60px; background: var(--color-blue); border-radius: 2px;"></div>
+          <div style="width: 60px; height: 60px; background: var(--color-green); border-radius: 4px;"></div>
+          <div style="width: 60px; height: 60px; background: var(--color-violet); border-radius: 6px;"></div>
+        </div>
+      </section>
+
+      <!-- Components -->
+      <section id="components" class="ds-section">
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">04</span>
+          <span class="eds-sechead__title">// components</span>
+          <span class="eds-sechead__sub">10 building blocks</span>
+        </div>
+
+        <h3 class="eds-h3" style="margin-top: 0;">Buttons</h3>
+        <div class="demo-row">
+          <a class="eds-btn eds-btn--primary">./contact.sh →</a>
+          <a class="eds-btn eds-btn--ghost">cat resume.pdf</a>
+          <a class="eds-btn eds-btn--link">view source ↗</a>
+        </div>
+
+        <h3 class="eds-h3" style="margin-top: 32px;">Tags</h3>
+        <div class="demo-row">
+          <span class="eds-tag">RAG</span>
+          <span class="eds-tag eds-tag--blue">INFRA</span>
+          <span class="eds-tag eds-tag--green">ECO</span>
+          <span class="eds-tag eds-tag--violet">OSS</span>
+        </div>
+
+        <h3 class="eds-h3" style="margin-top: 32px;">Panel + KV rows</h3>
+        <div class="eds-panel" style="max-width: 480px;">
+          <div class="eds-mono-label" style="margin-bottom: 10px;">// system.status</div>
+          <div class="eds-kv"><span class="eds-kv__k">host</span><span class="eds-kv__v" style="color:var(--color-green);">ekuznetsov.dev</span></div>
+          <div class="eds-kv"><span class="eds-kv__k">region</span><span class="eds-kv__v" style="color:var(--color-green);">EU-WEST · JP-EAST</span></div>
+          <div class="eds-kv"><span class="eds-kv__k">status</span><span class="eds-kv__v" style="color:var(--color-green);">● accepting input</span></div>
+          <div class="eds-kv"><span class="eds-kv__k">net</span><span class="eds-kv__v" style="color:var(--color-violet);">0% plastic · 92% pedal</span></div>
+        </div>
+
+        <h3 class="eds-h3" style="margin-top: 32px;">Stat cards</h3>
+        <div class="ds-grid ds-grid--4">
+          <div class="eds-stat" style="border-left-color: var(--color-green);">
+            <div class="eds-stat__label">footprint 2025</div>
+            <div class="eds-stat__big" style="color: var(--color-green);">1.84<span class="eds-stat__unit">tCO₂e</span></div>
+            <div class="eds-stat__sub">−63% vs EU avg</div>
+          </div>
+          <div class="eds-stat" style="border-left-color: var(--color-blue);">
+            <div class="eds-stat__label">rail this year</div>
+            <div class="eds-stat__big" style="color: var(--color-blue);">11,420<span class="eds-stat__unit">km</span></div>
+            <div class="eds-stat__sub">≈ Paris→Tokyo ×2</div>
+          </div>
+          <div class="eds-stat" style="border-left-color: var(--color-violet);">
+            <div class="eds-stat__label">plastic-free streak</div>
+            <div class="eds-stat__big" style="color: var(--color-violet);">14<span class="eds-stat__unit">mo</span></div>
+            <div class="eds-stat__sub">bulk · refill · repair</div>
+          </div>
+          <div class="eds-stat">
+            <div class="eds-stat__label">bicycle commute</div>
+            <div class="eds-stat__big">92<span class="eds-stat__unit">%</span></div>
+            <div class="eds-stat__sub">rain or melt</div>
+          </div>
+        </div>
+
+        <h3 class="eds-h3" style="margin-top: 32px;">Input</h3>
+        <div style="max-width: 320px;">
+          <div class="eds-mono-label" style="margin-bottom: 8px;">// EMAIL</div>
+          <input class="eds-input" placeholder="hi@ekuznetsov.dev" />
+        </div>
+
+        <h3 class="eds-h3" style="margin-top: 32px;">Section heading</h3>
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">04</span>
+          <span class="eds-sechead__title">// traceroute</span>
+          <span class="eds-sechead__sub">paris → tokyo, slow lane</span>
+        </div>
+      </section>
+
+      <!-- Tokens -->
+      <section id="tokens" class="ds-section">
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">05</span>
+          <span class="eds-sechead__title">// tokens.css</span>
+          <span class="eds-sechead__sub">copy-paste-ready</span>
+        </div>
+<pre class="code"><span class="c">/* Drop into :root */</span>
+<span class="k">--color-bg</span>:        <span class="s">#06080B</span>;
+<span class="k">--color-text</span>:      <span class="s">#E8DDD0</span>;
+<span class="k">--color-accent</span>:    <span class="s">#FF8A3D</span>;
+<span class="k">--color-blue</span>:      <span class="s">#5AA9FF</span>;
+<span class="k">--color-green</span>:     <span class="s">#5DD39E</span>;
+<span class="k">--color-violet</span>:    <span class="s">#AA6EFF</span>;
+
+<span class="k">--font-mono</span>:       <span class="s">'JetBrains Mono', monospace</span>;
+<span class="k">--fs-112</span>:          <span class="s">112px</span>;
+<span class="k">--fs-56</span>:           <span class="s">56px</span>;
+<span class="k">--fs-14</span>:           <span class="s">14px</span>;
+
+<span class="k">--s-4</span>:             <span class="s">16px</span>;  <span class="c">/* 4-pt grid */</span>
+<span class="k">--s-8</span>:             <span class="s">32px</span>;
+<span class="k">--ease-out</span>:       <span class="s">cubic-bezier(0.16, 1, 0.3, 1)</span>;</pre>
+      </section>
+
+      <!-- Usage -->
+      <section id="use" class="ds-section">
+        <div class="eds-sechead">
+          <span class="eds-sechead__num">06</span>
+          <span class="eds-sechead__title">// usage</span>
+          <span class="eds-sechead__sub">two files, no build step</span>
+        </div>
+<pre class="code"><span class="c">&lt;!-- 1. import --&gt;</span>
+<span class="p">&lt;link</span> rel=<span class="s">"stylesheet"</span> href=<span class="s">"design-system/components.css"</span><span class="p">&gt;</span>
+
+<span class="c">&lt;!-- 2. set palette (optional, default = orange-warm) --&gt;</span>
+<span class="p">&lt;body</span> data-palette=<span class="s">"matcha"</span><span class="p">&gt;</span>
+
+<span class="c">&lt;!-- 3. compose --&gt;</span>
+<span class="p">&lt;div</span> class=<span class="s">"eds-panel"</span><span class="p">&gt;</span>
+  <span class="p">&lt;div</span> class=<span class="s">"eds-mono-label"</span><span class="p">&gt;</span>// system.status<span class="p">&lt;/div&gt;</span>
+  <span class="p">&lt;a</span> class=<span class="s">"eds-btn eds-btn--primary"</span><span class="p">&gt;</span>./contact.sh →<span class="p">&lt;/a&gt;</span>
+<span class="p">&lt;/div&gt;</span></pre>
+
+        <div class="download-card">
+          <div>
+            <div class="eds-mono-label" style="margin-bottom: 8px;">// READY TO SHIP</div>
+            <div class="eds-h2" style="color: var(--color-text);">Download v1.0</div>
+            <div class="eds-body" style="margin-top: 6px; opacity: 0.85;">tokens.css · components.css · README.md · this page</div>
+          </div>
+          <a class="eds-btn eds-btn--primary" style="font-size: 13px; padding: 14px 22px;" href="ekuznetsov-design-system-v1.zip" download>↓ ZIP</a>
+        </div>
+      </section>
+
+      <footer style="margin-top: 96px; padding-top: 24px; border-top: var(--bd-1); display:flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--fs-11); opacity: 0.6;">
+        <span>© 2026 Evgenii Kuznetsov · MIT</span>
+        <span>v1.0 · 2026·04·25</span>
+        <span><span style="color: var(--color-green);">●</span> all systems nominal</span>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Palette switcher + hex updater
+  const buttons = document.querySelectorAll("#palette-toggle button");
+  const updateHex = () => {
+    const cs = getComputedStyle(document.body);
+    document.getElementById("hex-bg").textContent = cs.getPropertyValue("--color-bg").trim().replace("#", "").toUpperCase();
+    document.getElementById("hex-text").textContent = cs.getPropertyValue("--color-text").trim().replace("#", "").toUpperCase();
+    document.getElementById("hex-accent").textContent = cs.getPropertyValue("--color-accent").trim().replace("#", "").toUpperCase();
+  };
+  buttons.forEach(b => b.addEventListener("click", () => {
+    buttons.forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    document.body.setAttribute("data-palette", b.dataset.p);
+    setTimeout(updateHex, 50);
+  }));
+  updateHex();
+</script>
+</body>
+</html>

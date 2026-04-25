@@ -1,38 +1,98 @@
 @import "idev-ui/tokens/tokens.css";
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-/* ── Token bridge: map idev-ui tokens → CRM component names ── */
+/* ── ekuznetsov.dev Design System tokens ──────────────────────────
+   Terminal-style monospace dark theme with palette-swappable accents.
+   Source: /design-system/tokens.css (Orange Warm default).
+   Applied to CRM via the token bridge below — components stay where
+   they were, but every existing CSS var resolves to the design system. */
 :root {
-  --bg-main:        var(--bg);
-  --bg-card:        var(--surface);
-  --bg-hover:       var(--surface-2);
-  --text-secondary: var(--text-muted);
+  /* Palette: Orange Warm */
+  --color-bg:        #06080B;
+  --color-bg-deep:   #03050A;
+  --color-panel:     rgba(8, 14, 22, 0.7);
+  --color-grid:      rgba(255, 200, 150, 0.05);
+  --color-border-eds: rgba(255, 180, 120, 0.18);
 
-  --radius-xl:      8px;
-  --radius-lg:      var(--r-lg);
-  --radius-md:      var(--r-sm);
+  --color-text-eds:      #E8DDD0;
+  --color-text-dim:      rgba(232, 221, 208, 0.55);
+
+  --color-accent-eds:    #FF8A3D;
+  --color-blue:          #5AA9FF;
+  --color-green:         #5DD39E;
+  --color-violet:        #AA6EFF;
+
+  --glow-a: rgba(255, 138, 61, 0.18);
+  --glow-b: rgba(170, 110, 255, 0.10);
+  --glow-c: rgba(93, 211, 158, 0.08);
+
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
 }
 
-/* ── Tailwind v4 color aliases for idev-ui components ──
-   idev-ui uses Tailwind classes like bg-accent, text-text-muted
-   which in Tailwind v4 map to --color-* CSS vars ── */
+/* ── Token bridge: every legacy var the CRM uses now resolves to the
+   design system. This avoids touching ~150 components. ── */
+:root {
+  /* idev-ui base tokens (overrides) */
+  --bg:             var(--color-bg);
+  --surface:        rgba(255, 255, 255, 0.025);
+  --surface-2:      rgba(255, 255, 255, 0.045);
+  --text:           var(--color-text-eds);
+  --text-muted:     var(--color-text-dim);
+  --text-subtle:    rgba(232, 221, 208, 0.4);
+  --border:         var(--color-border-eds);
+
+  /* CRM-specific aliases */
+  --bg-main:        var(--color-bg);
+  --bg-card:        var(--surface);
+  --bg-hover:       var(--surface-2);
+  --text-secondary: var(--color-text-dim);
+  --accent:         var(--color-accent-eds);
+  --accent-hover:   #FF9A55;
+  --accent-soft:    rgba(255, 138, 61, 0.12);
+  --success:        var(--color-green);
+  --warning:        #FACC15;
+  --danger:         #FF6B6B;
+  --info:           var(--color-blue);
+
+  --radius-xl:      8px;
+  --radius-lg:      6px;
+  --radius-md:      4px;
+  --radius-sm:      2px;
+}
+
+/* ── Tailwind v4 color aliases ── */
 @theme {
-  --color-accent:        #fd7448;
-  --color-accent-hover:  #eb633d;
-  --color-accent-soft:   rgba(253, 116, 72, 0.12);
-  --color-success:       #4ade80;
-  --color-warning:       #facc15;
-  --color-danger:        #f87171;
-  --color-info:          #60a5fa;
-  --color-text:          var(--text);
-  --color-text-muted:    var(--text-muted);
-  --color-text-subtle:   var(--text-subtle);
-  --color-surface:       var(--surface);
-  --color-surface-2:     var(--surface-2);
-  --color-border:        var(--border);
-  --font-brand:          'Montserrat', system-ui, sans-serif;
-  --radius-sm:           var(--r-sm);
-  --radius-pill:         var(--r-pill);
+  --color-accent:        #FF8A3D;
+  --color-accent-hover:  #FF9A55;
+  --color-accent-soft:   rgba(255, 138, 61, 0.12);
+  --color-success:       #5DD39E;
+  --color-warning:       #FACC15;
+  --color-danger:        #FF6B6B;
+  --color-info:          #5AA9FF;
+  --color-text:          #E8DDD0;
+  --color-text-muted:    rgba(232, 221, 208, 0.55);
+  --color-text-subtle:   rgba(232, 221, 208, 0.4);
+  --color-surface:       rgba(255, 255, 255, 0.025);
+  --color-surface-2:     rgba(255, 255, 255, 0.045);
+  --color-border:        rgba(255, 180, 120, 0.18);
+  --font-brand:          'Inter', system-ui, sans-serif;
+  --radius-sm:           4px;
+  --radius-pill:         9999px;
+}
+
+/* ── Body baseline ── */
+html, body {
+  background: var(--color-bg);
+  color: var(--color-text-eds);
+  font-family: var(--font-sans);
+}
+
+/* Monospace numbers and labels — tabular feel for KPI/dashboards */
+.font-mono, code, kbd, pre, samp,
+[class*="text-mono"], .eds-mono-label {
+  font-family: var(--font-mono);
 }
 
 /* ── Global resets ── */
