@@ -429,48 +429,56 @@ class CrmScenarios(BaseScenario):
             self._record("S21_chat_composer", "FAIL", str(e),
                          await self._shot("S21_err"), start)
 
-    # ── S23: Reactions — open picker, click emoji, see reaction count ─
+    # ── S23: Reactions via context menu (right-click) — set + remove ─
     async def test_chat_reactions(self):
         start = await self._step("S23_chat_reactions")
         try:
             await self._set_vp("desktop")
             await self._go("/chat", wait=2.5)
 
-            # First send a fresh message so we always have one to react to
+            # Send a fresh message
             inp = self.page.locator("input[type='text'], textarea").last
             if await inp.count() > 0:
                 await inp.fill("titan-react-target")
                 await inp.press("Enter")
                 await asyncio.sleep(2.0)
 
-            # Force-show the 🙂+ button (it's hover-only on desktop) by injecting CSS
-            await self.page.add_style_tag(content="button[aria-label='Add reaction']{opacity:1!important}")
-            add_btn = self.page.locator("button[aria-label='Add reaction']").last
-            if await add_btn.count() == 0:
-                self._record("S23_chat_reactions", "FAIL", "no add-reaction button",
-                             await self._shot("S23_no_btn"), start)
+            # Right-click on the new message bubble to open context menu
+            bubble = self.page.locator("text=titan-react-target").last
+            if await bubble.count() == 0:
+                self._record("S23_chat_reactions", "FAIL", "no message bubble",
+                             await self._shot("S23_no_msg"), start)
                 return
-            await add_btn.scroll_into_view_if_needed()
-            await add_btn.click(force=True)
+            await bubble.click(button="right")
             try:
-                await self.page.wait_for_selector(
-                    "[role='menu'][aria-label='Reaction picker']", timeout=3000,
-                )
+                await self.page.wait_for_selector("button:has-text('🔥')", timeout=3000)
             except Exception:
-                self._record("S23_chat_reactions", "FAIL", "reaction picker did not open",
-                             await self._shot("S23_no_picker"), start)
+                self._record("S23_chat_reactions", "FAIL", "context menu didn't open",
+                             await self._shot("S23_no_ctx"), start)
                 return
 
-            fire = self.page.locator(
-                "[role='menu'][aria-label='Reaction picker'] button[aria-label='React with 🔥']"
-            ).first
-            await fire.click()
-            await asyncio.sleep(2.5)  # wait for WS broadcast + handleReaction reload
-            shot = await self._shot("S23_after_react")
+            # Click 🔥 in the quick-emoji bar at top of context menu
+            await self.page.locator("button:has-text('🔥')").first.click()
+            await asyncio.sleep(2.5)
+            shot1 = await self._shot("S23_after_add")
             text = await self.page.evaluate("document.body.innerText")
-            ok = "🔥" in text
-            self._record("S23_chat_reactions", "PASS" if ok else "FAIL",
-                         f"🔥 visible after react: {ok}", shot, start)
+            added_ok = "🔥" in text
+
+            # Now click the reaction badge to REMOVE the reaction
+            badge = self.page.locator("button[title*='remove']").first
+            removed_ok = False
+            if await badge.count() > 0:
+                await badge.click()
+                await asyncio.sleep(2.5)
+                text2 = await self.page.evaluate("document.body.innerText")
+                removed_ok = text2.count("🔥") < text.count("🔥")
+            shot = await self._shot("S23_after_remove")
+
+            self._record(
+                "S23_chat_reactions",
+                "PASS" if (added_ok and removed_ok) else "FAIL",
+                f"add: {added_ok}, remove: {removed_ok}", shot, start,
+            )
         except Exception as e:
             self._record("S23_chat_reactions", "FAIL", str(e),
                          await self._shot("S23_err"), start)

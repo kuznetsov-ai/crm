@@ -710,8 +710,11 @@ export default function ChatPage() {
     setCtxMenu({ x, y, msg })
   }
 
-  // Long-press for touch devices — opens the same context menu after 500ms hold
+  // Long-press (touch ≥ 500ms) opens the context menu (same as right-click).
+  // Double-tap (two taps within 300ms) opens the reaction quick-picker.
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastTapAtRef = useRef<{ msgId: number; t: number; x: number; y: number } | null>(null)
+
   const handleTouchStart = (e: React.TouchEvent, msg: ChatMessage) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
     const touch = e.touches[0]
@@ -719,7 +722,24 @@ export default function ChatPage() {
     const y = Math.min(touch.clientY, window.innerHeight - 280)
     longPressTimer.current = setTimeout(() => {
       setCtxMenu({ x, y, msg })
+      longPressTimer.current = null
     }, 500)
+
+    // Double-tap detection
+    const now = Date.now()
+    const last = lastTapAtRef.current
+    if (last && last.msgId === msg.id && now - last.t < 300) {
+      // Confirmed double-tap — cancel long-press, open reaction picker
+      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+      lastTapAtRef.current = null
+      setReactPickerFor({
+        msgId: msg.id,
+        x: Math.max(8, Math.min(touch.clientX - 110, window.innerWidth - 240)),
+        y: Math.max(8, touch.clientY - 60),
+      })
+    } else {
+      lastTapAtRef.current = { msgId: msg.id, t: now, x: touch.clientX, y: touch.clientY }
+    }
   }
   const handleTouchEnd = () => {
     if (longPressTimer.current) {
@@ -782,7 +802,14 @@ export default function ChatPage() {
     setCtxMenu(null)
   }
   const ctxCopy = () => { if (!ctxMenu) return; navigator.clipboard.writeText(ctxMenu.msg.text).catch(() => {}); setCtxMenu(null) }
-  const ctxReact = (emoji: string) => { if (!ctxMenu) return; sendReaction(ctxMenu.msg.id, emoji); setCtxMenu(null) }
+  const ctxReact = (emoji: string) => {
+    if (!ctxMenu) return
+    const msgId = ctxMenu.msg.id
+    setCtxMenu(null)
+    chatApi.messages.react(msgId, emoji)
+      .then(() => activeChannelId && chatApi.messages.list(activeChannelId).then(setMessages))
+      .catch(() => sendReaction(msgId, emoji))  // WS fallback if REST fails
+  }
   const ctxEdit = () => { if (!ctxMenu) return; setEditingId(ctxMenu.msg.id); setEditingText(ctxMenu.msg.text); setCtxMenu(null) }
   const ctxDelete = async () => {
     if (!ctxMenu) return
@@ -1360,39 +1387,36 @@ export default function ChatPage() {
                       </div>
                       )}
 
-                      <div className={`flex items-center gap-1 flex-wrap ${isOwn ? 'flex-row-reverse' : ''}`}>
-                        {msg.reactions.length > 0 && Object.entries(
-                          msg.reactions.reduce((acc, r) => {
-                            acc[r.emoji] = (acc[r.emoji] ?? 0) + 1
-                            return acc
-                          }, {} as Record<string, number>)
-                        ).map(([emoji, count]) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => sendReaction(msg.id, emoji)}
-                            className="text-xs bg-[var(--bg-hover)] border border-[var(--border)] rounded-full px-1.5 py-0.5 hover:border-[var(--accent)] transition-colors"
-                            title="Toggle reaction"
-                          >
-                            {emoji} {count}
-                          </button>
-                        ))}
-
-                        {/* Add-reaction button — always visible on touch devices, hover-only on desktop */}
-                        <button
-                          type="button"
-                          aria-label="Add reaction"
-                          title="Add reaction"
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            openReactionPickerForMessage(msg, e.currentTarget)
-                          }}
-                          className="text-sm leading-none w-7 h-7 flex items-center justify-center rounded-full bg-[var(--bg-hover)]/60 border border-[var(--border)] hover:bg-[var(--bg-hover)] hover:border-[var(--accent)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors md:opacity-0 md:group-hover:opacity-100"
-                        >
-                          🙂+
-                        </button>
-                      </div>
+                      {msg.reactions.length > 0 && (
+                        <div className={`flex items-center gap-1 flex-wrap ${isOwn ? 'flex-row-reverse' : ''}`}>
+                          {(() => {
+                            const grouped = new Map<string, { count: number; mine: boolean }>()
+                            for (const r of msg.reactions) {
+                              const cur = grouped.get(r.emoji) ?? { count: 0, mine: false }
+                              cur.count += 1
+                              if (r.user?.id === user?.id) cur.mine = true
+                              grouped.set(r.emoji, cur)
+                            }
+                            return Array.from(grouped.entries()).map(([emoji, { count, mine }]) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => chatApi.messages.react(msg.id, emoji)
+                                  .then(() => activeChannelId && chatApi.messages.list(activeChannelId).then(setMessages))
+                                  .catch(() => {})}
+                                className={`text-xs rounded-full px-1.5 py-0.5 transition-colors ${
+                                  mine
+                                    ? 'bg-[var(--accent)]/20 border border-[var(--accent)] text-[var(--accent)]'
+                                    : 'bg-[var(--bg-hover)] border border-[var(--border)] hover:border-[var(--accent)]'
+                                }`}
+                                title={mine ? 'Click to remove your reaction' : 'Click to add this reaction'}
+                              >
+                                {emoji} {count}
+                              </button>
+                            ))
+                          })()}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
