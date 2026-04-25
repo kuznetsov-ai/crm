@@ -18,15 +18,19 @@ type IncomingEvent =
   | { type: 'message'; message: ChatMessage }
   | { type: 'reaction'; result: ReactionResult }
   | { type: 'typing'; user_id: number; user_name: string; is_typing: boolean }
+  | { type: 'message_edited'; message: ChatMessage }
+  | { type: 'message_deleted'; message_id: number }
 
 interface UseChatSocketOptions {
   channelId: number | null
   onMessage: (msg: ChatMessage) => void
   onReaction: (result: ReactionResult) => void
   onTyping?: (event: TypingEvent) => void
+  onEdited?: (msg: ChatMessage) => void
+  onDeleted?: (messageId: number) => void
 }
 
-export function useChatSocket({ channelId, onMessage, onReaction, onTyping }: UseChatSocketOptions) {
+export function useChatSocket({ channelId, onMessage, onReaction, onTyping, onEdited, onDeleted }: UseChatSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const [connected, setConnected] = useState(false)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -34,11 +38,15 @@ export function useChatSocket({ channelId, onMessage, onReaction, onTyping }: Us
   const onMessageRef = useRef(onMessage)
   const onReactionRef = useRef(onReaction)
   const onTypingRef = useRef(onTyping)
+  const onEditedRef = useRef(onEdited)
+  const onDeletedRef = useRef(onDeleted)
 
   // Keep refs up to date without triggering reconnect
   useEffect(() => { onMessageRef.current = onMessage }, [onMessage])
   useEffect(() => { onReactionRef.current = onReaction }, [onReaction])
   useEffect(() => { onTypingRef.current = onTyping }, [onTyping])
+  useEffect(() => { onEditedRef.current = onEdited }, [onEdited])
+  useEffect(() => { onDeletedRef.current = onDeleted }, [onDeleted])
 
   const connect = useCallback(() => {
     if (!channelId) return
@@ -67,6 +75,8 @@ export function useChatSocket({ channelId, onMessage, onReaction, onTyping }: Us
             is_typing: data.is_typing,
           })
         }
+        else if (data.type === 'message_edited') onEditedRef.current?.(data.message)
+        else if (data.type === 'message_deleted') onDeletedRef.current?.(data.message_id)
       } catch { /* ignore malformed */ }
     }
 

@@ -114,6 +114,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'is_typing': event['is_typing'],
         }))
 
+    async def chat_message_edited(self, event):
+        await self.send(text_data=json.dumps({'type': 'message_edited', 'message': event['message']}))
+
+    async def chat_message_deleted(self, event):
+        await self.send(text_data=json.dumps({'type': 'message_deleted', 'message_id': event['message_id']}))
+
     @database_sync_to_async
     def check_membership(self):
         from apps.chat.models import ChatChannel

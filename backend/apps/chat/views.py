@@ -133,6 +133,75 @@ class ChatMessageListView(generics.ListCreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
+class ChatMessageDetailView(APIView):
+    """PATCH/DELETE /api/chat/messages/<id>/ — edit own message text or delete it.
+
+    Author-only. Broadcasts the change to all connected websockets in the channel.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _msg(self, pk, request):
+        try:
+            msg = ChatMessage.objects.select_related('channel', 'workspace').get(pk=pk)
+        except ChatMessage.DoesNotExist:
+            return None, Response({'error': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
+        if msg.author_id != request.user.id:
+            return None, Response({'error': 'not_author'}, status=status.HTTP_403_FORBIDDEN)
+        return msg, None
+
+    def patch(self, request, pk):
+        msg, err = self._msg(pk, request)
+        if err: return err
+        text = (request.data.get('text') or '').strip()
+        if not text:
+            return Response({'error': 'empty_text'}, status=status.HTTP_400_BAD_REQUEST)
+        msg.text = text
+        msg.is_edited = True
+        msg.save(update_fields=['text', 'is_edited', 'updated_at'])
+
+        data = ChatMessageSerializer(msg, context={'request': request}).data
+        layer = get_channel_layer()
+        if layer is not None:
+            ws_id = msg.workspace_id
+            group_name = f'ws_{ws_id}_chat_{msg.channel_id}' if ws_id else f'chat_{msg.channel_id}'
+            async_to_sync(layer.group_send)(group_name, {'type': 'chat_message_edited', 'message': data})
+        return Response(data)
+
+    def delete(self, request, pk):
+        msg, err = self._msg(pk, request)
+        if err: return err
+        channel_id = msg.channel_id
+        ws_id = msg.workspace_id
+        msg_id = msg.id
+        msg.delete()
+        layer = get_channel_layer()
+        if layer is not None:
+            group_name = f'ws_{ws_id}_chat_{channel_id}' if ws_id else f'chat_{channel_id}'
+            async_to_sync(layer.group_send)(group_name, {'type': 'chat_message_deleted', 'message_id': msg_id})
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ChatMessageSearchView(APIView):
+    """GET /api/chat/<channel_id>/search/?q=... — full-text-ish search through a channel."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, channel_id):
+        if not ChatChannel.objects.filter(pk=channel_id, members=request.user).exists():
+            return Response({'error': 'not_a_member'}, status=status.HTTP_403_FORBIDDEN)
+        q = (request.query_params.get('q') or '').strip()
+        if not q:
+            return Response({'results': [], 'q': ''})
+        msgs = (
+            ChatMessage.objects
+            .filter(channel_id=channel_id, text__icontains=q)
+            .select_related('author', 'reply_to__author')
+            .prefetch_related('reactions__user')
+            .order_by('-created_at')[:50]
+        )
+        data = ChatMessageSerializer(msgs, many=True, context={'request': request}).data
+        return Response({'results': data, 'q': q, 'count': len(data)})
+
+
 class MyMentionsView(generics.ListAPIView):
     """GET /api/chat/mentions/ — mentions of the current user (latest first)."""
     serializer_class = ChatMentionSerializer

@@ -320,6 +320,11 @@ export default function ChatPage() {
   const [pinnedIdx, setPinnedIdx] = useState(0)
   const [forwardMsg, setForwardMsg] = useState<ChatMessage | null>(null)
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingText, setEditingText] = useState('')
+  const [messageSearch, setMessageSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<ChatMessage[] | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const ctxRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -476,12 +481,44 @@ export default function ChatPage() {
     return () => clearInterval(id)
   }, [])
 
+  const handleEdited = useCallback((msg: ChatMessage) => {
+    setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)))
+  }, [])
+  const handleDeleted = useCallback((id: number) => {
+    setMessages((prev) => prev.filter((m) => m.id !== id))
+  }, [])
+
   const { connected, sendMessage, sendReaction, sendTyping } = useChatSocket({
     channelId: activeChannelId,
     onMessage: handleNewMessage,
     onReaction: handleReaction,
     onTyping: handleTyping,
+    onEdited: handleEdited,
+    onDeleted: handleDeleted,
   })
+
+  const submitEdit = async () => {
+    if (editingId == null) return
+    const newText = editingText.trim()
+    if (!newText) { setEditingId(null); return }
+    try {
+      const updated = await chatApi.messages.edit(editingId, newText)
+      setMessages((prev) => prev.map((m) => (m.id === editingId ? { ...m, ...updated } : m)))
+    } catch { /* server-side error */ }
+    setEditingId(null)
+    setEditingText('')
+  }
+
+  const runMessageSearch = async (q: string) => {
+    if (!activeChannelId || !q.trim()) {
+      setSearchResults(null)
+      return
+    }
+    try {
+      const data = await chatApi.messages.search(activeChannelId, q.trim())
+      setSearchResults(data.results)
+    } catch { setSearchResults([]) }
+  }
 
   const handleVoiceSend = async (blob: Blob, durationSec: number) => {
     if (!activeChannelId) return
@@ -622,6 +659,19 @@ export default function ChatPage() {
   }
   const ctxCopy = () => { if (!ctxMenu) return; navigator.clipboard.writeText(ctxMenu.msg.text).catch(() => {}); setCtxMenu(null) }
   const ctxReact = (emoji: string) => { if (!ctxMenu) return; sendReaction(ctxMenu.msg.id, emoji); setCtxMenu(null) }
+  const ctxEdit = () => { if (!ctxMenu) return; setEditingId(ctxMenu.msg.id); setEditingText(ctxMenu.msg.text); setCtxMenu(null) }
+  const ctxDelete = async () => {
+    if (!ctxMenu) return
+    const id = ctxMenu.msg.id
+    setCtxMenu(null)
+    if (!window.confirm('Delete this message for everyone?')) return
+    try {
+      await chatApi.messages.delete(id)
+      setMessages((prev) => prev.filter((m) => m.id !== id))
+    } catch (e) {
+      // optimistic — silently fail; the WS broadcast will eventually reconcile
+    }
+  }
 
   const handleForward = (targetChannelId: number) => {
     if (!forwardMsg) return
@@ -860,6 +910,18 @@ export default function ChatPage() {
             >
               {sentimentLoading ? '...' : 'AI sentiment'}
             </button>
+            <button
+              type="button"
+              onClick={() => { setSearchOpen((v) => !v); if (searchOpen) { setMessageSearch(''); setSearchResults(null) } }}
+              className={`ml-1 w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${searchOpen ? 'bg-[var(--accent)]/15 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)]'}`}
+              title="Search messages"
+              aria-label="Search messages"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </button>
             {/* Pinned banner */}
             {pinnedIds.size > 0 && (() => {
               const arr = Array.from(pinnedIds)
@@ -889,6 +951,57 @@ export default function ChatPage() {
               )
             })()}
           </div>
+
+          {/* Message search bar */}
+          {searchOpen && (
+            <div className="px-4 py-2 border-b border-[var(--border)] flex items-center gap-2 bg-[var(--bg-hover)]/30">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-secondary)] shrink-0">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                autoFocus
+                value={messageSearch}
+                onChange={(e) => { setMessageSearch(e.target.value); runMessageSearch(e.target.value) }}
+                placeholder="Search in this channel…"
+                className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder-[var(--text-secondary)]"
+              />
+              {searchResults && (
+                <span className="text-xs text-[var(--text-secondary)] font-mono">{searchResults.length} hit{searchResults.length === 1 ? '' : 's'}</span>
+              )}
+              <button
+                type="button"
+                onClick={() => { setSearchOpen(false); setMessageSearch(''); setSearchResults(null) }}
+                className="text-[var(--text-secondary)] hover:text-[var(--danger)] shrink-0"
+                aria-label="Close search"
+              >✕</button>
+            </div>
+          )}
+
+          {/* Search result panel */}
+          {searchOpen && searchResults && searchResults.length > 0 && (
+            <div className="border-b border-[var(--border)] bg-[var(--bg-hover)]/20 max-h-48 overflow-y-auto">
+              {searchResults.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById(`msg-${m.id}`)
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      el.classList.remove('msg-highlight'); void el.offsetWidth; el.classList.add('msg-highlight')
+                    }
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[var(--bg-hover)] border-b border-[var(--border)]/40"
+                >
+                  <div className="text-xs font-semibold text-[var(--accent)]">{m.author?.full_name ?? '—'}</div>
+                  <div className="text-sm text-[var(--text)] truncate">{m.text}</div>
+                  <div className="text-[10px] text-[var(--text-secondary)] font-mono">{new Date(m.created_at).toLocaleString()}</div>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Sentiment banner */}
           {sentiment && (
@@ -1011,7 +1124,32 @@ export default function ChatPage() {
                             />
                           </div>
                         )}
-                        {msg.text && <p className="whitespace-pre-wrap break-words">{renderWithMentions(msg.text)}</p>}
+                        {editingId === msg.id ? (
+                          <div className="flex flex-col gap-1.5 min-w-[220px]">
+                            <textarea
+                              autoFocus
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitEdit() }
+                                if (e.key === 'Escape') { setEditingId(null); setEditingText('') }
+                              }}
+                              className="w-full bg-[var(--bg-card-solid,var(--bg-card))] text-[var(--text)] rounded-md p-2 text-sm resize-none border border-[var(--accent)] outline-none"
+                              rows={Math.max(2, Math.min(6, editingText.split('\n').length + 1))}
+                            />
+                            <div className="flex gap-2 justify-end text-xs">
+                              <button type="button" onClick={() => { setEditingId(null); setEditingText('') }} className="text-[var(--text-secondary)] hover:text-[var(--text)]">Cancel</button>
+                              <button type="button" onClick={submitEdit} className="text-[var(--accent)] font-semibold hover:underline">Save</button>
+                            </div>
+                          </div>
+                        ) : (
+                          msg.text && (
+                            <p className="whitespace-pre-wrap break-words">
+                              {renderWithMentions(msg.text)}
+                              {msg.is_edited && <span className="text-[10px] opacity-60 ml-2">(edited)</span>}
+                            </p>
+                          )
+                        )}
                         <span className={`text-[10px] mt-0.5 float-right ml-3 ${isOwn ? 'text-white/60' : 'text-[var(--text-secondary)]'}`}>
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
@@ -1229,21 +1367,29 @@ export default function ChatPage() {
               <button key={emoji} onClick={() => ctxReact(emoji)} className="text-lg hover:scale-125 transition-transform active:scale-95">{emoji}</button>
             ))}
           </div>
-          {[
-            { icon: '↩', label: t('chat.reply'), action: ctxReply },
-            { icon: '⤴', label: t('chat.forward'), action: ctxForward },
-            { icon: '📌', label: pinnedIds.has(ctxMenu.msg.id) ? t('chat.unpin') : t('chat.pin'), action: ctxPin },
-            { icon: '📋', label: t('chat.copy'), action: ctxCopy },
-          ].map(({ icon, label, action }) => (
-            <button
-              key={label}
-              onClick={action}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text)] hover:bg-[var(--bg-hover)] transition-colors text-left"
-            >
-              <span className="text-base w-5 text-center">{icon}</span>
-              {label}
-            </button>
-          ))}
+          {(() => {
+            const own = ctxMenu.msg.author?.id === user?.id
+            const items: { icon: string; label: string; action: () => void; danger?: boolean }[] = [
+              { icon: '↩', label: t('chat.reply'), action: ctxReply },
+              { icon: '⤴', label: t('chat.forward'), action: ctxForward },
+              { icon: '📌', label: pinnedIds.has(ctxMenu.msg.id) ? t('chat.unpin') : t('chat.pin'), action: ctxPin },
+              { icon: '📋', label: t('chat.copy'), action: ctxCopy },
+            ]
+            if (own) {
+              items.push({ icon: '✏', label: 'Edit', action: ctxEdit })
+              items.push({ icon: '🗑', label: 'Delete', action: ctxDelete, danger: true })
+            }
+            return items.map(({ icon, label, action, danger }) => (
+              <button
+                key={label}
+                onClick={action}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[var(--bg-hover)] transition-colors text-left ${danger ? 'text-[var(--danger,#FF6B6B)]' : 'text-[var(--text)]'}`}
+              >
+                <span className="text-base w-5 text-center">{icon}</span>
+                {label}
+              </button>
+            ))
+          })()}
         </div>
       )}
 

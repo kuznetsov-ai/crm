@@ -100,6 +100,17 @@ export const chatApi = {
     forward: async (messageId: number, targetChannelId: number): Promise<void> => {
       await api.post(`/chat/messages/${messageId}/forward/`, { channel_id: targetChannelId })
     },
+    edit: async (messageId: number, text: string): Promise<ChatMessage> => {
+      const { data } = await api.patch(`/chat/messages/${messageId}/`, { text })
+      return data
+    },
+    delete: async (messageId: number): Promise<void> => {
+      await api.delete(`/chat/messages/${messageId}/`)
+    },
+    search: async (channelId: number, q: string): Promise<{ results: ChatMessage[]; q: string; count: number }> => {
+      const { data } = await api.get(`/chat/${channelId}/search/`, { params: { q } })
+      return data
+    },
   },
   mentions: {
     list: async (unreadOnly = false): Promise<ChatMentionRow[]> => {
