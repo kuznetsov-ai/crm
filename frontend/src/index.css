@@ -149,12 +149,19 @@ html, body {
 }
 .eds-stat__big {
   font-family: var(--font-mono);
-  font-size: 36px;
+  font-size: clamp(22px, 5.5vw, 36px);
   font-weight: 600;
   line-height: 1.05;
   margin-top: 8px;
   color: var(--color-accent-eds);
   font-feature-settings: "tnum" 1;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.eds-stat {
+  min-width: 0;
+  overflow: hidden;
 }
 .eds-stat__unit {
   font-family: var(--font-mono);

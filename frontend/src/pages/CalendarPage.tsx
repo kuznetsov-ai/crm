@@ -2063,9 +2063,13 @@ export default function CalendarPage() {
           fontSize: 16,
           fontWeight: 700,
           color: 'var(--text)',
-          flex: 1,
+          flex: '1 1 100%',
           minWidth: 0,
-        }}>
+          order: 99,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }} className="sm:!flex-[1_1_auto] sm:!order-none">
           {label}
         </span>
 
@@ -2090,9 +2094,11 @@ export default function CalendarPage() {
             fontSize: 13,
             fontWeight: 700,
             whiteSpace: 'nowrap',
+            marginLeft: 'auto',
           }}
         >
-          + Новое событие
+          <span className="hidden sm:inline">+ Новое событие</span>
+          <span className="sm:hidden" aria-label="Новое событие">＋</span>
         </button>
 
         {/* View toggle */}

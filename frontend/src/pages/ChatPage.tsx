@@ -801,8 +801,11 @@ export default function ChatPage() {
   return (
     <div className="flex h-[calc(100vh-3.5rem-3rem)] rounded-[var(--radius-xl)] border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
 
-      {/* ── Sidebar ── */}
-      <div className="w-72 border-r border-[var(--border)] flex flex-col shrink-0">
+      {/* ── Sidebar ──
+          On mobile we use a single-pane navigation: the sidebar takes the full
+          width when no channel is open, and is hidden when a channel is open.
+          On md+ both panels show side-by-side. */}
+      <div className={`md:w-72 md:border-r md:border-[var(--border)] flex flex-col shrink-0 ${activeChannelId ? 'hidden md:flex' : 'w-full md:flex'}`}>
 
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-2">
@@ -932,10 +935,21 @@ export default function ChatPage() {
 
       {/* ── Chat area ── */}
       {activeChannelId ? (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex-1 flex flex-col overflow-hidden ${activeChannelId ? 'flex' : 'hidden md:flex'}`}>
           {/* Header */}
-          <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+          <div className="px-3 sm:px-4 py-3 border-b border-[var(--border)] flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Mobile back button */}
+            <button
+              type="button"
+              onClick={() => setActiveChannelId(null)}
+              className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] transition-colors shrink-0"
+              aria-label="Back to channel list"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0
               ${activeChannel?.channel_type === 'direct' ? 'bg-[var(--accent)]/15 text-[var(--accent)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
               {activeChannel ? getChannelInitial(activeChannel) : '?'}
             </div>
@@ -968,10 +982,19 @@ export default function ChatPage() {
             <button
               onClick={runSentiment}
               disabled={sentimentLoading}
-              className="ml-2 px-2.5 py-1 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 disabled:opacity-50 transition-opacity"
+              className="hidden sm:inline-flex ml-auto px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--accent)] border border-[var(--accent)] hover:bg-[var(--accent)]/10 disabled:opacity-50 transition-colors"
               title="AI анализ тональности переписки"
             >
               {sentimentLoading ? '...' : 'AI sentiment'}
+            </button>
+            <button
+              onClick={runSentiment}
+              disabled={sentimentLoading}
+              className="sm:hidden ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-[var(--accent)] border border-[var(--accent)] hover:bg-[var(--accent)]/10 disabled:opacity-50 transition-colors shrink-0"
+              title="AI анализ тональности переписки"
+              aria-label="AI sentiment"
+            >
+              ★
             </button>
             <button
               type="button"

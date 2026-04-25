@@ -117,15 +117,15 @@ export default function ClientsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[var(--text)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold text-[var(--text)] min-w-0">
           {t('nav.clients')}
-          <span className="ml-2 text-[var(--text-secondary)] text-lg font-normal">({count})</span>
+          <span className="ml-2 text-[var(--text-secondary)] text-base sm:text-lg font-normal">({count})</span>
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={() => setCsvOpen(true)}
-            className="text-[var(--text-secondary)] text-sm font-medium px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--bg-hover)] transition-colors inline-flex items-center gap-1.5"
+            className="text-[var(--text-secondary)] text-sm font-medium px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--bg-hover)] transition-colors inline-flex items-center gap-1.5 shrink-0"
             title="Импорт из CSV"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -137,7 +137,7 @@ export default function ClientsPage() {
           </button>
           <button
             onClick={() => setEnrichOpen(true)}
-            className="text-white text-sm font-medium px-4 py-2 rounded-[var(--radius-md)] bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
+            className="text-[var(--accent)] text-sm font-medium px-4 py-2 rounded-[var(--radius-md)] border border-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors inline-flex items-center gap-1.5 shrink-0"
             title="AI: найти клиента по домену"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"/></svg>
@@ -145,7 +145,7 @@ export default function ClientsPage() {
           </button>
           <button
             onClick={() => setCreateOpen(true)}
-            className="bg-[var(--accent)] text-white text-sm font-medium px-4 py-2 rounded-[var(--radius-md)] hover:opacity-90 transition-opacity"
+            className="bg-[var(--accent)] text-white text-sm font-medium px-4 py-2 rounded-[var(--radius-md)] hover:opacity-90 transition-opacity shrink-0 ml-auto sm:ml-0"
           >
             + {t('clients.add')}
           </button>
