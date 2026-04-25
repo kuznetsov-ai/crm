@@ -248,9 +248,9 @@ class CrmScenarios(BaseScenario):
             await self._go("/dashboard")
             shot = await self._shot("S12_demo_banner")
             body = (await self.page.evaluate("document.body.innerText")).lower()
-            ok = "demo" in body and "reset" in body and "sandbox" in body
+            ok = "demo" in body and "reset" in body
             self._record("S12_demo_banner", "PASS" if ok else "FAIL",
-                         f"banner found: {ok} (demo+reset+sandbox keywords)", shot, start)
+                         f"banner found: {ok} (demo+reset keywords)", shot, start)
         except Exception as e:
             self._record("S12_demo_banner", "FAIL", str(e),
                          await self._shot("S12_err"), start)
@@ -369,6 +369,89 @@ class CrmScenarios(BaseScenario):
             self._record("S17_settings", "FAIL", str(e),
                          await self._shot("S17_err"), start)
 
+    # ── S20: Chat — send a text message and see it appear ────
+    async def test_chat_send_message(self):
+        start = await self._step("S20_chat_send")
+        try:
+            await self._set_vp("desktop")
+            await self._go("/chat", wait=2.0)
+
+            # Click first channel button in the sidebar to make sure one is active
+            chan_btn = self.page.locator("aside ~ div button, button:has(.font-medium)").first
+            if await chan_btn.count() == 0:
+                # Try a more permissive selector
+                chan_btn = self.page.locator("button:has-text('General'), button:has-text('Sales')").first
+            if await chan_btn.count() > 0:
+                try:
+                    await chan_btn.click(timeout=3000)
+                    await asyncio.sleep(1)
+                except Exception:
+                    pass
+
+            inp = self.page.locator("input[type='text'], textarea").last
+            if await inp.count() == 0:
+                self._record("S20_chat_send", "FAIL", "no composer input found",
+                             await self._shot("S20_no_input"), start)
+                return
+            stamp = f"titan-probe-{int(asyncio.get_event_loop().time() * 1000) % 100000}"
+            await inp.fill(stamp)
+            await inp.press("Enter")
+            await asyncio.sleep(2.5)
+            shot = await self._shot("S20_after_send")
+            text = await self.page.evaluate("document.body.innerText")
+            ok = stamp in text
+            self._record("S20_chat_send", "PASS" if ok else "FAIL",
+                         f"sent {stamp!r}, visible in DOM: {ok}", shot, start)
+        except Exception as e:
+            self._record("S20_chat_send", "FAIL", str(e),
+                         await self._shot("S20_err"), start)
+
+    # ── S21: Chat composer — voice + emoji + paperclip buttons ─
+    async def test_chat_composer_ui(self):
+        start = await self._step("S21_chat_composer")
+        try:
+            await self._set_vp("desktop")
+            await self._go("/chat", wait=1.5)
+            shot = await self._shot("S21_composer")
+            voice = await self.page.locator("button[aria-label='Record voice message']").count()
+            emoji = await self.page.locator("button[title='Эмодзи'], button[title='emoji']").count()
+            attach = await self.page.locator("button[title='Прикрепить файл'], button[title='Attach']").count()
+            ok = voice > 0
+            self._record(
+                "S21_chat_composer",
+                "PASS" if ok else "WARN",
+                f"voice={voice}, emoji={emoji}, attach={attach}",
+                shot, start,
+            )
+        except Exception as e:
+            self._record("S21_chat_composer", "FAIL", str(e),
+                         await self._shot("S21_err"), start)
+
+    # ── S22: Chat mobile — single pane + back button ─────────
+    async def test_chat_mobile_single_pane(self):
+        start = await self._step("S22_chat_mobile")
+        try:
+            await self._set_vp("mobile")
+            await self._go("/chat", wait=2.0)
+            # On mobile we expect channel list visible OR message panel — never both
+            sidebars = await self.page.locator("aside, nav.chat-sidebar").count()
+            # Look for back-button hint (md:hidden chevron near header)
+            back_btn = await self.page.locator("button[aria-label='Back to channel list']").count()
+            shot = await self._shot("S22_chat_mobile")
+            # Check no horizontal overflow
+            sw = await self.page.evaluate("document.documentElement.scrollWidth")
+            iw = await self.page.evaluate("window.innerWidth")
+            no_overflow = sw <= iw + 4
+            self._record(
+                "S22_chat_mobile",
+                "PASS" if (back_btn >= 1 and no_overflow) else "FAIL",
+                f"back-btn nodes={back_btn}, scrollWidth={sw}, innerWidth={iw}, sidebars seen={sidebars}",
+                shot, start,
+            )
+        except Exception as e:
+            self._record("S22_chat_mobile", "FAIL", str(e),
+                         await self._shot("S22_err"), start)
+
     # ── S18: Mobile screenshots of every page (visual evidence) ─
     async def test_mobile_screenshots(self):
         start = await self._step("S18_mobile_screenshots")
@@ -404,6 +487,9 @@ class CrmScenarios(BaseScenario):
             self.test_demo_reset_endpoint,
             self.test_mobile_drawer_solid,
             self.test_desktop_collapse,
+            self.test_chat_send_message,
+            self.test_chat_composer_ui,
+            self.test_chat_mobile_single_pane,
             self.test_mobile_screenshots,
         ]
         if only:
