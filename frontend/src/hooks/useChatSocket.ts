@@ -14,12 +14,27 @@ interface TypingEvent {
   is_typing: boolean
 }
 
+interface PresenceEvent {
+  user_id: number
+  user_name: string
+  online: boolean
+  last_seen: string | null
+}
+
+interface MessageReadEvent {
+  message_id: number
+  user_id: number
+  read_at: string
+}
+
 type IncomingEvent =
   | { type: 'message'; message: ChatMessage }
   | { type: 'reaction'; result: ReactionResult }
   | { type: 'typing'; user_id: number; user_name: string; is_typing: boolean }
   | { type: 'message_edited'; message: ChatMessage }
   | { type: 'message_deleted'; message_id: number }
+  | { type: 'presence'; user_id: number; user_name: string; online: boolean; last_seen: string | null }
+  | { type: 'message_read'; message_id: number; user_id: number; read_at: string }
 
 interface UseChatSocketOptions {
   channelId: number | null
@@ -28,9 +43,11 @@ interface UseChatSocketOptions {
   onTyping?: (event: TypingEvent) => void
   onEdited?: (msg: ChatMessage) => void
   onDeleted?: (messageId: number) => void
+  onPresence?: (event: PresenceEvent) => void
+  onMessageRead?: (event: MessageReadEvent) => void
 }
 
-export function useChatSocket({ channelId, onMessage, onReaction, onTyping, onEdited, onDeleted }: UseChatSocketOptions) {
+export function useChatSocket({ channelId, onMessage, onReaction, onTyping, onEdited, onDeleted, onPresence, onMessageRead }: UseChatSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const [connected, setConnected] = useState(false)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -40,6 +57,8 @@ export function useChatSocket({ channelId, onMessage, onReaction, onTyping, onEd
   const onTypingRef = useRef(onTyping)
   const onEditedRef = useRef(onEdited)
   const onDeletedRef = useRef(onDeleted)
+  const onPresenceRef = useRef(onPresence)
+  const onMessageReadRef = useRef(onMessageRead)
 
   // Keep refs up to date without triggering reconnect
   useEffect(() => { onMessageRef.current = onMessage }, [onMessage])
@@ -47,6 +66,8 @@ export function useChatSocket({ channelId, onMessage, onReaction, onTyping, onEd
   useEffect(() => { onTypingRef.current = onTyping }, [onTyping])
   useEffect(() => { onEditedRef.current = onEdited }, [onEdited])
   useEffect(() => { onDeletedRef.current = onDeleted }, [onDeleted])
+  useEffect(() => { onPresenceRef.current = onPresence }, [onPresence])
+  useEffect(() => { onMessageReadRef.current = onMessageRead }, [onMessageRead])
 
   const connect = useCallback(() => {
     if (!channelId) return
@@ -77,6 +98,21 @@ export function useChatSocket({ channelId, onMessage, onReaction, onTyping, onEd
         }
         else if (data.type === 'message_edited') onEditedRef.current?.(data.message)
         else if (data.type === 'message_deleted') onDeletedRef.current?.(data.message_id)
+        else if (data.type === 'presence') {
+          onPresenceRef.current?.({
+            user_id: data.user_id,
+            user_name: data.user_name,
+            online: data.online,
+            last_seen: data.last_seen,
+          })
+        }
+        else if (data.type === 'message_read') {
+          onMessageReadRef.current?.({
+            message_id: data.message_id,
+            user_id: data.user_id,
+            read_at: data.read_at,
+          })
+        }
       } catch { /* ignore malformed */ }
     }
 

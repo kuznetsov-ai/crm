@@ -266,6 +266,46 @@ class ChatMediaView(APIView):
         return Response({'results': data, 'kind': kind, 'count': len(data)})
 
 
+class ChatMessageForwardView(APIView):
+    """POST /api/chat/messages/<id>/forward/ {channel_id} — repost into another channel."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            src = ChatMessage.objects.select_related('author', 'workspace').get(pk=pk)
+        except ChatMessage.DoesNotExist:
+            return Response({'error': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
+
+        target_id = request.data.get('channel_id')
+        if not target_id:
+            return Response({'error': 'channel_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        target = ChatChannel.objects.filter(pk=target_id, members=request.user).first()
+        if not target:
+            return Response({'error': 'not_a_member_of_target'}, status=status.HTTP_403_FORBIDDEN)
+
+        msg = ChatMessage.objects.create(
+            channel=target,
+            author=request.user,
+            text=src.text,
+            workspace=target.workspace,
+            forwarded_from=src,
+            attachment=src.attachment if src.attachment else None,
+            attachment_name=src.attachment_name,
+            attachment_size=src.attachment_size,
+            attachment_mime=src.attachment_mime,
+        )
+        ChatChannel.objects.filter(pk=target.id).update(updated_at=msg.created_at)
+
+        data = ChatMessageSerializer(msg, context={'request': request}).data
+        layer = get_channel_layer()
+        if layer is not None:
+            ws_id = msg.workspace_id
+            group_name = f'ws_{ws_id}_chat_{target.id}' if ws_id else f'chat_{target.id}'
+            async_to_sync(layer.group_send)(group_name, {'type': 'chat_message', 'message': data})
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
 class ChatMessageDetailView(APIView):
     """PATCH/DELETE /api/chat/messages/<id>/ — edit own message text or delete it.
 

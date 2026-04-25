@@ -8,6 +8,9 @@ import { useChatSocket } from '../hooks/useChatSocket'
 import EmojiPicker from '../components/chat/EmojiPicker'
 import VoiceRecorder from '../components/chat/VoiceRecorder'
 import AudioMessage from '../components/chat/AudioMessage'
+import OnlineDot, { ReadCheckmarks, lastSeenText } from '../components/chat/OnlineDot'
+import MembersModal from '../components/chat/MembersModal'
+import MediaGalleryModal from '../components/chat/MediaGalleryModal'
 import api from '../api/client'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🎉', '🔥', '😮', '😢']
@@ -325,6 +328,9 @@ export default function ChatPage() {
   const [messageSearch, setMessageSearch] = useState('')
   const [searchResults, setSearchResults] = useState<ChatMessage[] | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [presence, setPresence] = useState<Record<number, { online: boolean; last_seen: string | null; name: string }>>({})
+  const [membersOpen, setMembersOpen] = useState(false)
+  const [galleryOpen, setGalleryOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const ctxRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -487,6 +493,20 @@ export default function ChatPage() {
   const handleDeleted = useCallback((id: number) => {
     setMessages((prev) => prev.filter((m) => m.id !== id))
   }, [])
+  const handlePresence = useCallback((evt: { user_id: number; user_name: string; online: boolean; last_seen: string | null }) => {
+    setPresence((prev) => ({
+      ...prev,
+      [evt.user_id]: { online: evt.online, last_seen: evt.last_seen, name: evt.user_name },
+    }))
+  }, [])
+  const handleMessageRead = useCallback((evt: { message_id: number; user_id: number }) => {
+    setMessages((prev) => prev.map((m) => {
+      if (m.id !== evt.message_id) return m
+      const rb = new Set(m.read_by ?? [])
+      rb.add(evt.user_id)
+      return { ...m, read_by: Array.from(rb) }
+    }))
+  }, [])
 
   const { connected, sendMessage, sendReaction, sendTyping } = useChatSocket({
     channelId: activeChannelId,
@@ -495,7 +515,33 @@ export default function ChatPage() {
     onTyping: handleTyping,
     onEdited: handleEdited,
     onDeleted: handleDeleted,
+    onPresence: handlePresence,
+    onMessageRead: handleMessageRead,
   })
+
+  // Initial presence load when active channel changes
+  useEffect(() => {
+    if (!activeChannelId) return
+    chatApi.presence.list(activeChannelId).then(d => {
+      const map: Record<number, { online: boolean; last_seen: string | null; name: string }> = {}
+      for (const m of d.members) map[m.user_id] = { online: m.online, last_seen: m.last_seen, name: m.name }
+      setPresence(map)
+    }).catch(() => {})
+  }, [activeChannelId])
+
+  // Mark unread messages as read after they show up
+  useEffect(() => {
+    if (!activeChannelId || !user || messages.length === 0) return
+    const unreadIds = messages
+      .filter(m => m.author && m.author.id !== user.id)
+      .filter(m => !(m.read_by ?? []).includes(user.id))
+      .map(m => m.id)
+    if (unreadIds.length === 0) return
+    const t = setTimeout(() => {
+      chatApi.messages.markRead(activeChannelId, unreadIds).catch(() => {})
+    }, 700)
+    return () => clearTimeout(t)
+  }, [activeChannelId, messages, user])
 
   const submitEdit = async () => {
     if (editingId == null) return
@@ -675,7 +721,6 @@ export default function ChatPage() {
 
   const handleForward = (targetChannelId: number) => {
     if (!forwardMsg) return
-    setInput(`↪ ${forwardMsg.author?.full_name ?? 'Someone'}: ${forwardMsg.text}`)
     if (targetChannelId !== activeChannelId) setActiveChannelId(targetChannelId)
     chatApi.messages.forward(forwardMsg.id, targetChannelId).catch(() => {})
     setForwardMsg(null)
@@ -894,12 +939,30 @@ export default function ChatPage() {
               ${activeChannel?.channel_type === 'direct' ? 'bg-[var(--accent)]/15 text-[var(--accent)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
               {activeChannel ? getChannelInitial(activeChannel) : '?'}
             </div>
-            <div>
-              <div className="text-sm font-semibold text-[var(--text)]">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[var(--text)] flex items-center gap-2 truncate">
                 {activeChannel ? getChannelName(activeChannel) : ''}
+                {activeChannel?.channel_type === 'direct' && (() => {
+                  const peer = activeChannel.members.find(m => m.id !== user?.id)
+                  if (!peer) return null
+                  const p = presence[peer.id]
+                  return p ? <OnlineDot online={p.online} size={9} title={p.online ? 'Online' : `Last seen ${lastSeenText(p.last_seen)}`} /> : null
+                })()}
               </div>
-              <div className={`text-xs ${connected ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'}`}>
-                {connected ? t('chat.online') : t('chat.connecting')}
+              <div className="text-xs text-[var(--text-secondary)] font-mono truncate">
+                {activeChannel?.channel_type === 'group' ? (
+                  (() => {
+                    const onlineCount = activeChannel.members.filter(m => presence[m.id]?.online).length
+                    return `${activeChannel.members.length} members${onlineCount ? ` · ${onlineCount} online` : ''}`
+                  })()
+                ) : (
+                  (() => {
+                    const peer = activeChannel?.members.find(m => m.id !== user?.id)
+                    const p = peer ? presence[peer.id] : null
+                    if (!p) return connected ? t('chat.online') : t('chat.connecting')
+                    return p.online ? 'online' : `last seen ${lastSeenText(p.last_seen)}`
+                  })()
+                )}
               </div>
             </div>
             <button
@@ -920,6 +983,28 @@ export default function ChatPage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setGalleryOpen(true)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)]"
+              title="Media gallery"
+              aria-label="Media gallery"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMembersOpen(true)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)]"
+              title={activeChannel?.channel_type === 'group' ? 'Manage members' : 'Show member info'}
+              aria-label="Members"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             </button>
             {/* Pinned banner */}
@@ -1088,6 +1173,15 @@ export default function ChatPage() {
                         </div>
                       )}
 
+                      {msg.forwarded_from_preview && (
+                        <div className="text-[10px] text-[var(--text-secondary)] flex items-center gap-1 px-2 font-mono">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>
+                          </svg>
+                          Forwarded from <span className="text-[var(--accent)]">{msg.forwarded_from_preview.author}</span>
+                        </div>
+                      )}
+
                       {msg.attachment_url && isImageMime(msg.attachment_mime) && (
                         <AttachmentBubble
                           url={msg.attachment_url}
@@ -1150,8 +1244,13 @@ export default function ChatPage() {
                             </p>
                           )
                         )}
-                        <span className={`text-[10px] mt-0.5 float-right ml-3 ${isOwn ? 'text-white/60' : 'text-[var(--text-secondary)]'}`}>
+                        <span className={`text-[10px] mt-0.5 float-right ml-3 inline-flex items-center ${isOwn ? 'text-white/60' : 'text-[var(--text-secondary)]'}`}>
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <ReadCheckmarks
+                            readBy={msg.read_by}
+                            hasMembers={activeChannel?.members.length ?? 1}
+                            isOwn={isOwn}
+                          />
                         </span>
                       </div>
                       )}

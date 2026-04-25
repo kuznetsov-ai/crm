@@ -26,6 +26,12 @@ export interface MentionInfo {
   read: boolean
 }
 
+export interface ForwardedFromPreview {
+  id: number
+  text: string
+  author: string
+}
+
 export interface ChatMessage {
   id: number
   channel: number
@@ -33,6 +39,8 @@ export interface ChatMessage {
   text: string
   reply_to: number | null
   reply_to_preview: ReplyPreview | null
+  forwarded_from: number | null
+  forwarded_from_preview: ForwardedFromPreview | null
   is_edited: boolean
   reactions: ChatReaction[]
   attachment_url: string | null
@@ -40,8 +48,16 @@ export interface ChatMessage {
   attachment_size: number
   attachment_mime: string
   mentions?: MentionInfo[]
+  read_by?: number[]
   created_at: string
   updated_at: string
+}
+
+export interface PresenceMember {
+  user_id: number
+  name: string
+  last_seen: string | null
+  online: boolean
 }
 
 export interface ChatMentionRow {
@@ -110,6 +126,29 @@ export const chatApi = {
     search: async (channelId: number, q: string): Promise<{ results: ChatMessage[]; q: string; count: number }> => {
       const { data } = await api.get(`/chat/${channelId}/search/`, { params: { q } })
       return data
+    },
+    markRead: async (channelId: number, ids: number[]): Promise<{ ok: boolean; marked: number }> => {
+      const { data } = await api.post(`/chat/${channelId}/mark-read/`, { message_ids: ids })
+      return data
+    },
+    media: async (channelId: number, kind: 'all' | 'image' | 'audio' | 'file' = 'all'): Promise<{ results: ChatMessage[]; kind: string; count: number }> => {
+      const { data } = await api.get(`/chat/${channelId}/media/`, { params: { kind } })
+      return data
+    },
+  },
+  presence: {
+    list: async (channelId: number): Promise<{ members: PresenceMember[]; now: string }> => {
+      const { data } = await api.get(`/chat/${channelId}/presence/`)
+      return data
+    },
+  },
+  members: {
+    add: async (channelId: number, userIds: number[]): Promise<{ ok: boolean; added: number[] }> => {
+      const { data } = await api.post(`/chat/${channelId}/members/`, { user_ids: userIds })
+      return data
+    },
+    remove: async (channelId: number, userId: number): Promise<void> => {
+      await api.delete(`/chat/${channelId}/members/${userId}/`)
     },
   },
   mentions: {
