@@ -85,11 +85,34 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     {'type': 'chat_reaction', 'result': result}
                 )
 
+        elif msg_type == 'typing':
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_typing',
+                    'user_id': self.user.id,
+                    'user_name': getattr(self.user, 'full_name', None) or self.user.email,
+                    'is_typing': bool(data.get('is_typing')),
+                    'sender_channel_name': self.channel_name,
+                }
+            )
+
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({'type': 'message', 'message': event['message']}))
 
     async def chat_reaction(self, event):
         await self.send(text_data=json.dumps({'type': 'reaction', 'result': event['result']}))
+
+    async def chat_typing(self, event):
+        # Don't echo back to the sender
+        if event.get('sender_channel_name') == self.channel_name:
+            return
+        await self.send(text_data=json.dumps({
+            'type': 'typing',
+            'user_id': event['user_id'],
+            'user_name': event['user_name'],
+            'is_typing': event['is_typing'],
+        }))
 
     @database_sync_to_async
     def check_membership(self):

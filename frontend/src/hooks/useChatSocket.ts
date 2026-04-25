@@ -8,27 +8,37 @@ interface ReactionResult {
   user_id: number
 }
 
+interface TypingEvent {
+  user_id: number
+  user_name: string
+  is_typing: boolean
+}
+
 type IncomingEvent =
   | { type: 'message'; message: ChatMessage }
   | { type: 'reaction'; result: ReactionResult }
+  | { type: 'typing'; user_id: number; user_name: string; is_typing: boolean }
 
 interface UseChatSocketOptions {
   channelId: number | null
   onMessage: (msg: ChatMessage) => void
   onReaction: (result: ReactionResult) => void
+  onTyping?: (event: TypingEvent) => void
 }
 
-export function useChatSocket({ channelId, onMessage, onReaction }: UseChatSocketOptions) {
+export function useChatSocket({ channelId, onMessage, onReaction, onTyping }: UseChatSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const [connected, setConnected] = useState(false)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectDelay = useRef(1000)
   const onMessageRef = useRef(onMessage)
   const onReactionRef = useRef(onReaction)
+  const onTypingRef = useRef(onTyping)
 
   // Keep refs up to date without triggering reconnect
   useEffect(() => { onMessageRef.current = onMessage }, [onMessage])
   useEffect(() => { onReactionRef.current = onReaction }, [onReaction])
+  useEffect(() => { onTypingRef.current = onTyping }, [onTyping])
 
   const connect = useCallback(() => {
     if (!channelId) return
@@ -50,6 +60,13 @@ export function useChatSocket({ channelId, onMessage, onReaction }: UseChatSocke
         const data: IncomingEvent = JSON.parse(event.data)
         if (data.type === 'message') onMessageRef.current(data.message)
         else if (data.type === 'reaction') onReactionRef.current(data.result)
+        else if (data.type === 'typing') {
+          onTypingRef.current?.({
+            user_id: data.user_id,
+            user_name: data.user_name,
+            is_typing: data.is_typing,
+          })
+        }
       } catch { /* ignore malformed */ }
     }
 
@@ -86,5 +103,11 @@ export function useChatSocket({ channelId, onMessage, onReaction }: UseChatSocke
     }
   }, [])
 
-  return { connected, sendMessage, sendReaction }
+  const sendTyping = useCallback((isTyping: boolean) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'typing', is_typing: isTyping }))
+    }
+  }, [])
+
+  return { connected, sendMessage, sendReaction, sendTyping }
 }

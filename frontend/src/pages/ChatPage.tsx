@@ -6,6 +6,8 @@ import { chatApi, type ChatChannel, type ChatMessage, type ChatUser } from '../a
 import { aiApi, type SentimentResult } from '../api/ai'
 import { useChatSocket } from '../hooks/useChatSocket'
 import EmojiPicker from '../components/chat/EmojiPicker'
+import VoiceRecorder from '../components/chat/VoiceRecorder'
+import AudioMessage from '../components/chat/AudioMessage'
 import api from '../api/client'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🎉', '🔥', '😮', '😢']
@@ -18,6 +20,10 @@ function formatFileSize(bytes: number): string {
 
 function isImageMime(mime: string): boolean {
   return mime.startsWith('image/')
+}
+
+function isAudioMime(mime: string): boolean {
+  return mime.startsWith('audio/')
 }
 
 /** Relative timestamp like Telegram: сейчас / 5 мин / вчера / дата */
@@ -438,11 +444,75 @@ export default function ChatPage() {
     if (activeChannelId) chatApi.messages.list(activeChannelId).then(setMessages)
   }, [activeChannelId])
 
-  const { connected, sendMessage, sendReaction } = useChatSocket({
+  // Typing indicator state: map of user_id → {name, lastTs}
+  const [typingUsers, setTypingUsers] = useState<Record<number, { name: string; ts: number }>>({})
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastTypingEmitRef = useRef<number>(0)
+
+  const handleTyping = useCallback((evt: { user_id: number; user_name: string; is_typing: boolean }) => {
+    setTypingUsers((prev) => {
+      const next = { ...prev }
+      if (evt.is_typing) {
+        next[evt.user_id] = { name: evt.user_name, ts: Date.now() }
+      } else {
+        delete next[evt.user_id]
+      }
+      return next
+    })
+  }, [])
+
+  // Garbage-collect stale typing indicators every 2s
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTypingUsers((prev) => {
+        const now = Date.now()
+        const next: typeof prev = {}
+        for (const [k, v] of Object.entries(prev)) {
+          if (now - v.ts < 4000) next[Number(k)] = v
+        }
+        return next
+      })
+    }, 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  const { connected, sendMessage, sendReaction, sendTyping } = useChatSocket({
     channelId: activeChannelId,
     onMessage: handleNewMessage,
     onReaction: handleReaction,
+    onTyping: handleTyping,
   })
+
+  const handleVoiceSend = async (blob: Blob, durationSec: number) => {
+    if (!activeChannelId) return
+    setUploading(true)
+    try {
+      const file = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type || 'audio/webm' })
+      await chatApi.messages.sendWithAttachment(
+        activeChannelId,
+        `🎤 voice · ${durationSec}s`,
+        file,
+        replyTo?.id,
+      )
+      setReplyTo(null)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Debounced typing emit on input change
+  const emitTyping = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTypingEmitRef.current > 2000) {
+      sendTyping?.(true)
+      lastTypingEmitRef.current = now
+    }
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+    typingTimerRef.current = setTimeout(() => {
+      sendTyping?.(false)
+      lastTypingEmitRef.current = 0
+    }, 2500)
+  }, [sendTyping])
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -915,12 +985,22 @@ export default function ChatPage() {
                         />
                       )}
 
-                      {(msg.text || (msg.attachment_url && !isImageMime(msg.attachment_mime))) && (
+                      {msg.attachment_url && isAudioMime(msg.attachment_mime) && (
+                        <div className={`rounded-2xl px-3 py-2 ${isOwn ? 'bg-[var(--accent)]/15' : 'bg-[var(--bg-hover)]'} ${isPinned ? 'ring-1 ring-[var(--accent)]/40' : ''}`}>
+                          <AudioMessage
+                            src={msg.attachment_url}
+                            fileName={msg.attachment_name}
+                            sizeBytes={msg.attachment_size}
+                          />
+                        </div>
+                      )}
+
+                      {(msg.text || (msg.attachment_url && !isImageMime(msg.attachment_mime) && !isAudioMime(msg.attachment_mime))) && (
                       <div className={`relative rounded-2xl px-3 py-2 text-sm leading-relaxed
                         ${isOwn ? 'bg-[var(--accent)] text-white rounded-tr-sm' : 'bg-[var(--bg-hover)] text-[var(--text)] rounded-tl-sm'}
                         ${isPinned ? 'ring-1 ring-[var(--accent)]/40' : ''}`}>
                         {isPinned && <span className="absolute -top-1.5 -right-1 text-xs">📌</span>}
-                        {msg.attachment_url && !isImageMime(msg.attachment_mime) && (
+                        {msg.attachment_url && !isImageMime(msg.attachment_mime) && !isAudioMime(msg.attachment_mime) && (
                           <div className="mb-1.5">
                             <AttachmentBubble
                               url={msg.attachment_url}
@@ -1005,6 +1085,18 @@ export default function ChatPage() {
             </div>
           )}
 
+          {/* Typing indicator */}
+          {Object.keys(typingUsers).length > 0 && (
+            <div className="px-4 pt-1.5 text-xs italic text-[var(--text-secondary)] flex items-center gap-2">
+              <span className="flex gap-0.5">
+                <span className="w-1 h-1 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1 h-1 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: '120ms' }} />
+                <span className="w-1 h-1 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: '240ms' }} />
+              </span>
+              <span>{Object.values(typingUsers).map(u => u.name).join(', ')} {Object.keys(typingUsers).length === 1 ? 'is' : 'are'} typing…</span>
+            </div>
+          )}
+
           {/* Input */}
           <form onSubmit={handleSend} className="px-4 py-3 border-t border-[var(--border)] flex gap-2 items-end relative">
             <input ref={fileInputRef} type="file" className="hidden" onChange={handlePickFile} />
@@ -1033,6 +1125,8 @@ export default function ChatPage() {
                 <line x1="15" y1="9" x2="15.01" y2="9"/>
               </svg>
             </button>
+
+            <VoiceRecorder onSend={handleVoiceSend} disabled={uploading} />
 
             <EmojiPicker open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={insertEmoji} />
 
@@ -1068,6 +1162,7 @@ export default function ChatPage() {
               onChange={(e) => {
                 setInput(e.target.value)
                 updateMentionState(e.target.value, e.target.selectionStart ?? e.target.value.length)
+                if (e.target.value) emitTyping()
               }}
               onKeyDown={(e) => {
                 if (mentionState && mentionCandidates.length > 0) {
