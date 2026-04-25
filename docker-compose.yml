@@ -1,5 +1,10 @@
 version: '3.9'
 
+# Studio CRM stack.
+# Only the public nginx port is bound to the host (default :3500).
+# Postgres + Redis + backend stay on the internal docker network.
+# To run alongside other compose stacks, use `docker compose -p studio-crm up -d`.
+
 services:
   db:
     image: postgres:16-alpine
@@ -10,8 +15,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 5s
@@ -21,8 +24,6 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
 
   backend:
     build:
@@ -35,8 +36,8 @@ services:
       DB_HOST: db
       REDIS_URL: redis://redis:6379/0
       DJANGO_SETTINGS_MODULE: config.settings.prod
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       db:
         condition: service_healthy
@@ -53,7 +54,7 @@ services:
       dockerfile: frontend/Dockerfile
     restart: unless-stopped
     ports:
-      - "3300:80"
+      - "${HOST_HTTP_PORT:-3500}:80"
     volumes:
       - media_data:/app/media
     depends_on:
