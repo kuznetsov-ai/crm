@@ -434,7 +434,8 @@ export default function ChatPage() {
 
   const handleNewMessage = useCallback((msg: ChatMessage) => {
     if (msg.channel === activeChannelId) {
-      setMessages((prev) => [...prev, msg])
+      // Dedupe: WS broadcast can race with the POST response that already added the message.
+      setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg])
     }
     setChannels((prev) => {
       const updated = prev.map((ch) =>
@@ -603,12 +604,14 @@ export default function ChatPage() {
     if (pendingFile) {
       setUploading(true)
       try {
-        await chatApi.messages.sendWithAttachment(
+        const created = await chatApi.messages.sendWithAttachment(
           activeChannelId,
           input.trim(),
           pendingFile,
           replyTo?.id,
         )
+        // Add directly — the WS broadcast (also coming) is deduped by id in handleNewMessage
+        setMessages((prev) => prev.some((m) => m.id === created.id) ? prev : [...prev, created])
         setPendingFile(null)
         if (pendingPreview) URL.revokeObjectURL(pendingPreview)
         setPendingPreview(null)
@@ -621,7 +624,20 @@ export default function ChatPage() {
       return
     }
     if (!input.trim()) return
-    sendMessage(input.trim(), replyTo?.id)
+    // Try WS first (instant); fall back to REST POST if not connected
+    if (connected) {
+      sendMessage(input.trim(), replyTo?.id)
+    } else {
+      try {
+        const created = await chatApi.messages.sendWithAttachment(
+          activeChannelId, input.trim(), new File([], ''), replyTo?.id,
+        )
+        setMessages((prev) => prev.some((m) => m.id === created.id) ? prev : [...prev, created])
+      } catch {
+        // last resort — at least keep the input populated so user can retry
+        return
+      }
+    }
     setInput('')
     setReplyTo(null)
   }

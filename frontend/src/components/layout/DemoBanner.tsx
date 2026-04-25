@@ -23,14 +23,10 @@ export default function DemoBanner() {
     }
   }
 
-  const lastReset = info.last_reset_iso
-    ? new Date(info.last_reset_iso).toLocaleString()
-    : null
-
   return (
     <>
       <div
-        className="w-full px-4 py-2 flex items-center gap-3 flex-wrap shrink-0"
+        className="w-full px-4 py-2 flex items-center gap-3 shrink-0"
         style={{
           background: 'rgba(255, 138, 61, 0.10)',
           borderBottom: '1px solid var(--color-border-eds)',
@@ -40,9 +36,6 @@ export default function DemoBanner() {
       >
         <span className="eds-mono-label" style={{ color: 'var(--color-accent-eds)', fontSize: '11px' }}>
           // DEMO
-        </span>
-        <span className="eds-mono-label" style={{ textTransform: 'none', letterSpacing: 'normal', fontSize: '12px', color: 'var(--color-text-eds)' }}>
-          shared sandbox{lastReset ? ` · last reset: ${lastReset}` : ''} · click reset to refresh
         </span>
         <button
           type="button"

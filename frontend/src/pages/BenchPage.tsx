@@ -14,25 +14,25 @@ export default function BenchPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between">
-        <div>
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-[var(--text)]">Bench / Utilization</h1>
           <p className="text-xs text-[var(--text-secondary)] mt-1">
             Кто свободен, кто на проекте, ближайшие rolloff. Данные пока демо — подключение HR-системы отдельным эпиком.
           </p>
         </div>
         {totals && (
-          <div className="flex gap-2">
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2">
-              <div className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Всего</div>
+          <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex">
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 min-w-0">
+              <div className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider truncate">Всего</div>
               <div className="text-lg font-bold text-[var(--text)]">{totals.count}</div>
             </div>
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2">
-              <div className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">На bench</div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 min-w-0">
+              <div className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider truncate">На bench</div>
               <div className="text-lg font-bold text-orange-500">{totals.bench_count}</div>
             </div>
-            <div className="rounded-lg border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-3 py-2">
-              <div className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Средний util</div>
+            <div className="rounded-lg border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-3 py-2 min-w-0">
+              <div className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider truncate">Средний util</div>
               <div className="text-lg font-bold text-[var(--accent)]">{totals.avg_utilization_pct}%</div>
             </div>
           </div>
