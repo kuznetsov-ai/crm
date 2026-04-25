@@ -33,8 +33,7 @@ export default function DemoBanner() {
         className="w-full px-4 py-2 flex items-center gap-3 flex-wrap shrink-0"
         style={{
           background: 'rgba(255, 138, 61, 0.10)',
-          borderBottom: '1px solid var(--color-accent-eds)',
-          borderLeft: '3px solid var(--color-accent-eds)',
+          borderBottom: '1px solid var(--color-border-eds)',
           color: 'var(--color-text-eds)',
         }}
         role="status"

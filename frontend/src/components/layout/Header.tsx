@@ -43,26 +43,10 @@ function AutoThemeIcon() {
   )
 }
 
-function CollapseIcon({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      {collapsed ? (
-        <>
-          <polyline points="9 18 15 12 9 6"/>
-        </>
-      ) : (
-        <>
-          <polyline points="15 18 9 12 15 6"/>
-        </>
-      )}
-    </svg>
-  )
-}
-
 export default function Header({ onMenuClick, sidebarOpen }: Props) {
   const { t } = useTranslation()
   const { user, logout } = useAuthStore()
-  const { theme, resolvedTheme, cycleTheme, sidebarCollapsed, toggleSidebar } = useUiStore()
+  const { theme, resolvedTheme, cycleTheme } = useUiStore()
 
   const toggleLang = () => {
     const next = i18n.language === 'ru' ? 'en' : 'ru'
@@ -76,7 +60,7 @@ export default function Header({ onMenuClick, sidebarOpen }: Props) {
 
   return (
     <header className="h-14 border-b border-[var(--border)] bg-[var(--bg-card)] flex items-center px-4 gap-3 shrink-0">
-      {/* Mobile hamburger */}
+      {/* Mobile hamburger — only on phones; desktop collapse lives inside Sidebar */}
       <button
         onClick={onMenuClick}
         className="md:hidden w-9 h-9 flex flex-col items-center justify-center gap-1.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors shrink-0"
@@ -85,16 +69,6 @@ export default function Header({ onMenuClick, sidebarOpen }: Props) {
         <span className={`block w-5 h-0.5 bg-[var(--text)] transition-all duration-300 ${sidebarOpen ? 'rotate-45 translate-y-2' : ''}`} />
         <span className={`block w-5 h-0.5 bg-[var(--text)] transition-all duration-300 ${sidebarOpen ? 'opacity-0' : ''}`} />
         <span className={`block w-5 h-0.5 bg-[var(--text)] transition-all duration-300 ${sidebarOpen ? '-rotate-45 -translate-y-2' : ''}`} />
-      </button>
-
-      {/* Desktop sidebar collapse toggle */}
-      <button
-        onClick={toggleSidebar}
-        className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--bg-hover)] transition-colors shrink-0"
-        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        title={sidebarCollapsed ? t('common.expandMenu') : t('common.collapseMenu')}
-      >
-        <CollapseIcon collapsed={sidebarCollapsed} />
       </button>
 
       {/* Workspace switcher */}
