@@ -1,0 +1,59 @@
+name: Deploy Studio CRM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-crm
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CRM_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 89.167.108.210 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Rsync repo to /opt/crm
+        run: |
+          rsync -az --delete-after \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            --exclude='**/__pycache__' \
+            --exclude='**/.venv' \
+            --exclude='frontend/dist' \
+            --exclude='backend/media' \
+            ./ crm-deploy@89.167.108.210:/opt/crm/
+
+      - name: Rebuild and restart docker compose
+        run: |
+          ssh crm-deploy@89.167.108.210 '
+            cd /opt/crm &&
+            sudo /usr/bin/docker compose --project-directory /opt/crm -p studio-crm up -d --build
+          '
+
+      - name: Smoke test
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" https://crm.ekuznetsov.dev/)
+            if [ "$code" = "200" ]; then
+              echo "✓ HTTP $code on attempt $i"
+              exit 0
+            fi
+            echo "attempt $i: HTTP $code, retrying in 5s..."
+            sleep 5
+          done
+          echo "✗ Smoke test failed after 5 attempts"
+          exit 1
