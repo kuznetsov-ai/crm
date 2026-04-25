@@ -210,9 +210,12 @@ class Command(BaseCommand):
         admin_role = UserRole.objects.filter(preset='admin').first()
 
         specs = [
-            ('alex@demo.local',   'Alex',   'Thompson', admin_role, Membership.Role.OWNER),
+            ('demo@studio.crm',   'Demo',   'User',     admin_role, Membership.Role.OWNER),
+            ('alex@demo.local',   'Alex',   'Thompson', admin_role, Membership.Role.ADMIN),
             ('priya@demo.local',  'Priya',  'Sharma',   None,       Membership.Role.MEMBER),
             ('marcus@demo.local', 'Marcus', 'Lee',      None,       Membership.Role.MEMBER),
+            ('elena@demo.local',  'Elena',  'Volkova',  None,       Membership.Role.MEMBER),
+            ('jamal@demo.local',  'Jamal',  'Ndiaye',   None,       Membership.Role.MEMBER),
         ]
         users = []
         for email, first, last, role, mem_role in specs:
