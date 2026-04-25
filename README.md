@@ -7,7 +7,7 @@ Multi-module CRM for outstaff/talent agencies. Public demo with read-write sandb
 ![Stack](https://img.shields.io/badge/Backend-Django%205%20%2B%20DRF%20%2B%20Channels-green?style=flat-square)
 ![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite%20%2B%20Tailwind-blue?style=flat-square)
 ![DB](https://img.shields.io/badge/DB-Postgres%2016%20%2B%20Redis%207-purple?style=flat-square)
-![Demo](https://img.shields.io/badge/Demo-shared%20sandbox%20%2B%20auto--reset-blueviolet?style=flat-square)
+![Demo](https://img.shields.io/badge/Demo-shared%20sandbox-blueviolet?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
 ---
@@ -18,27 +18,46 @@ A complete CRM workflow in one app:
 
 | Module | What it covers |
 |--------|----------------|
-| **Dashboard** | KPI cards (revenue, pipeline, win rate, active deals), recent activity, quick actions |
+| **Dashboard** | KPI cards (active clients, pipeline value, my tasks, total deals, conversion), sales funnel with conversion rates, AI-powered Next Best Action, top managers leaderboard |
 | **Leads** | Inbound lead capture, qualification, conversion to clients/deals |
-| **Clients** | Company profiles, contacts, ratecards, tech stack, status pipeline |
-| **Deals** | Kanban + table view, stages, probability, value, dnd-kit drag-and-drop |
+| **Clients** | Company profiles, contacts, ratecards, tech stack, status pipeline, AI-assisted enrichment |
+| **Deals** | Kanban + table view, stages, probability, value, dnd-kit drag-and-drop, item lines, AI summary + draft email + resource match |
 | **Tasks** | Linked to clients/deals, priorities, deadlines, assignment |
 | **Calendar** | Events, reminders, busy slots, integration with tasks/deals |
-| **Chat** | Team chat (WebSocket), channels, replies, reactions, file attachments |
+| **Chat** | Telegram-grade team chat — see [Chat features](#chat-telegram-grade) below |
 | **KPI** | Per-user goals, team scoreboards, period comparisons |
 | **Backlog** | Idea tracking with voting and lifecycle (idea → in_progress → testing → done) |
-| **Reports** | Funnel charts, conversion rates, period analytics |
+| **Reports** | Deals / clients / tasks export to CSV with filters and grouping |
+| **Bench** | Available specialists roster (AI-augmented) |
 | **Search** | Global full-text across all entities |
-| **Settings** | Workspace, team, custom fields, integrations |
+| **Settings** | Workspace, team, custom fields, pipelines, dictionaries, integrations |
 
 ## Live demo — shared sandbox
 
 The public demo on `crm.ekuznetsov.dev` is read-write but bounded:
 
-- **No login.** `BYPASS_AUTH=true` auto-authenticates everyone as the demo user.
-- **One shared database.** Visitors see and edit the same dataset. This is by design — the WebSocket chat, KPI scoreboards, and team calendar would not be meaningful per-cookie.
-- **Manual reset.** A button in the demo banner triggers an immediate flush + reseed.
-- **AI / external integrations are stubbed.** Endpoints that would call DeepSeek, Anthropic, or HH return canned responses in demo mode — no keys exposed.
+- **No login.** `BYPASS_AUTH=true` auto-authenticates everyone as `demo@studio.crm` (workspace owner).
+- **One shared database.** Visitors see and edit the same dataset. WebSocket chat, KPI scoreboards, and team calendar would not be meaningful per-cookie.
+- **Manual reset.** A button in the demo banner triggers a flush + reseed via `POST /api/demo/reset`.
+- **AI keys are server-only.** DeepSeek / Anthropic keys live in `.env` on the server. Frontend never sees them.
+
+## Chat — Telegram-grade
+
+The team chat is built to feel like a Telegram replacement, not a basic message list:
+
+- **Voice messages** with live waveform during recording, custom playback bubble with click-to-seek progress
+- **Typing indicators** — animated dots + "X is typing…" debounced over WebSocket
+- **Reply / Forward** with cross-channel target picker
+- **Pin messages** with navigable pinned banner at the top
+- **Reactions** with quick-pick + reactor list
+- **Edit your messages** inline, with `(edited)` marker
+- **Delete for everyone** with WS broadcast — sub-second propagation
+- **@mentions** with autocomplete + dedicated inbox
+- **Search** within a channel, click-to-jump-and-highlight result
+- **Image lightbox**, file attachments, audio messages
+- **AI sentiment analysis** of channel mood (DeepSeek-powered)
+
+WebSocket events: `message`, `reaction`, `typing`, `message_edited`, `message_deleted`.
 
 ## Tech stack
 
@@ -47,7 +66,8 @@ The public demo on `crm.ekuznetsov.dev` is read-write but bounded:
 - **Database:** Postgres 16 (primary) + Redis 7 (channel layer + cache)
 - **Auth:** JWT (production) or `BYPASS_AUTH=true` (demo)
 - **Realtime:** Django Channels WebSocket for chat
-- **Deploy:** docker compose, nginx (frontend), Caddy (TLS)
+- **Deploy:** docker compose, nginx (frontend), Caddy (TLS), GitHub Actions CI/CD
+- **Design system:** terminal-style monospace dark theme — see `design-system/`
 
 ## Architecture in one screen
 
@@ -56,7 +76,7 @@ Browser (React SPA, Vite build)
           │
           ▼
 ┌─────────────────────┐
-│ nginx :80           │   multi-stage Docker: Vite build → nginx:alpine
+│ nginx :3500 → :80   │   multi-stage Docker: Vite build → nginx:alpine
 │  /            dist/ │
 │  /api/* ─┐          │
 │  /ws/*  ─┼── backend│
@@ -72,6 +92,8 @@ Browser (React SPA, Vite build)
 └─────────────────────┘
 ```
 
+Full topology: see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## Getting started (local)
 
 Requires Docker Desktop.
@@ -80,27 +102,26 @@ Requires Docker Desktop.
 git clone https://github.com/kuznetsov-ai/crm.git
 cd crm
 
-# 1. create .env (gitignored — keep your own)
+# 1. create .env (gitignored)
 cp backend/.env.example .env
-# adjust DB_PASSWORD, SECRET_KEY, AI keys if you want them live
+# adjust DB_PASSWORD, SECRET_KEY, AI keys (optional)
 
 # 2. bring up the stack
-docker compose up -d --build
+docker compose -p studio-crm up -d --build
 
-# 3. wait for migrations + fixtures to load
-docker compose logs -f backend   # look for "Listening on TCP address 0.0.0.0:8000"
+# 3. wait for migrations + seed_demo to load
+docker compose -p studio-crm logs -f backend   # look for "Listening on TCP address 0.0.0.0:8000"
 ```
 
-Open `http://localhost:3300`. With `BYPASS_AUTH=true` you land directly on the dashboard.
+Open `http://localhost:3500`. With `BYPASS_AUTH=true` you land directly on `/dashboard`.
 
 ## Repository structure
 
 ```
 crm/
 ├── backend/                 # Django 5 + DRF + Channels
-│   ├── apps/                # 21 Django apps (clients, deals, tasks, chat, kpi, …)
+│   ├── apps/                # 22 Django apps (clients, deals, leads, tasks, chat, kpi, demo, …)
 │   ├── config/              # settings, urls, asgi, wsgi
-│   ├── fixtures/            # demo seed data
 │   └── Dockerfile
 │
 ├── frontend/                # React 19 + Vite + Tailwind v4 + dnd-kit
@@ -108,8 +129,12 @@ crm/
 │   ├── vite.config.ts
 │   └── Dockerfile
 │
-├── idev-ui/                 # internal design system (tokens + components)
+├── design-system/           # terminal-style design tokens + eds-* components
+├── idev-ui/                 # legacy internal UI lib (still imported by some pages)
 ├── testMe/                  # Titan E2E / visual-regression scenarios
+├── docs/
+│   ├── ARCHITECTURE.md      # full topology, models, WS, demo-mode
+│   └── DEPLOY.md            # Silver Server bootstrap, GitHub Actions, Caddy, Cloudflare
 ├── nginx.conf               # reverse-proxy config (api / ws / media)
 └── docker-compose.yml
 ```
@@ -124,24 +149,44 @@ Environment variables (in `.env`):
 | `DB_NAME` | `studio_crm` | Postgres database name |
 | `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | postgres/postgres/db/5432 | Postgres connection |
 | `REDIS_URL` | `redis://redis:6379/0` | Channel layer + cache |
-| `BYPASS_AUTH` | `true` (demo) | Auto-login as the demo user |
-| `DEMO_MODE` | `true` (demo) | Stubs AI/HH integrations, enables reset endpoint |
-| `DEEPSEEK_API_KEY` | empty | Optional, server-only |
-| `ANTHROPIC_API_KEY` | empty | Optional, server-only |
+| `BYPASS_AUTH` | `true` (demo) | Auto-login as demo user |
+| `DEMO_MODE` | `true` (demo) | Enables `/api/demo/reset` |
+| `DEEPSEEK_API_KEY` | empty | Server-only |
+| `ANTHROPIC_API_KEY` | empty | Server-only |
+| `AI_PROVIDER` | `deepseek` | `anthropic` / `deepseek` / `openai` / `gemini` |
+| `AI_MODEL` | `deepseek-v4-flash` | Override default model id |
 | `ALLOWED_HOSTS` | localhost | Comma-separated |
 | `CORS_ALLOWED_ORIGINS` | localhost:5173 | Comma-separated |
+| `HOST_HTTP_PORT` | `3500` | Host port for nginx (only docker-compose) |
 
-## Deployment (crm.ekuznetsov.dev)
+## Deployment
 
-Hosted on Silver Server (Hetzner) behind Caddy. The full stack runs as `docker compose` services, fronted by Caddy on 443.
+Hosted on Silver Server (Hetzner CX22) behind Caddy. The full stack runs as `docker compose` services, fronted by Caddy on 443.
 
-Auto-deploy on push to `main` via GitHub Actions. Restricted SSH user `crm-deploy` rsyncs the repo, runs `docker compose up -d --build`, smoke-tests the public URL.
+**Auto-deploy on push to `main`** via GitHub Actions. Restricted SSH user `crm-deploy` rsyncs the repo, runs `docker compose -p studio-crm up -d --build`, smoke-tests `https://crm.ekuznetsov.dev/`.
 
-See `docs/ARCHITECTURE.md` for the full path.
+Full bootstrap, ownership model, sudoers, Caddy block, Cloudflare DNS — see [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Tests
 
-`testMe/` holds Titan + Playwright E2E scenarios covering pages, actions, and the demo sandbox at three viewports (393 / 768 / 1440).
+`testMe/` holds Titan + Playwright E2E scenarios covering:
+
+- Per-route content checks (Dashboard / Clients / Deals / Tasks / Backlog / KPI / Chat / Calendar / Leads / Reports / Settings)
+- Mobile (393×852) and tablet (768×1024) no-overflow across 11 routes
+- Demo banner + reset endpoint
+- Mobile drawer solidness (verifies `rgba` alpha = 1 — guards against the "see-through bagels" bug)
+- Desktop sidebar collapse + localStorage persistence
+- Mobile screenshots of every route (visual evidence per run)
+
+Run from a Titan checkout:
+
+```bash
+.venv/bin/python -m cli test \
+  --system config/systems/crm.yaml \
+  --scenario crm
+```
+
+Current state: **18/18 passing**.
 
 ## License
 
