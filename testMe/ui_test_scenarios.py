@@ -247,10 +247,10 @@ class CrmScenarios(BaseScenario):
             await self._set_vp("desktop")
             await self._go("/dashboard")
             shot = await self._shot("S12_demo_banner")
-            body = await self.page.evaluate("document.body.innerText")
-            ok = "DEMO" in body and "Reset" in body
+            body = (await self.page.evaluate("document.body.innerText")).lower()
+            ok = "demo" in body and "reset" in body and "sandbox" in body
             self._record("S12_demo_banner", "PASS" if ok else "FAIL",
-                         f"banner found: {ok}", shot, start)
+                         f"banner found: {ok} (demo+reset+sandbox keywords)", shot, start)
         except Exception as e:
             self._record("S12_demo_banner", "FAIL", str(e),
                          await self._shot("S12_err"), start)
