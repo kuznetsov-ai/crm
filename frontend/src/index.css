@@ -96,6 +96,160 @@ html, body {
   font-family: var(--font-mono);
 }
 
+/* ── ekuznetsov.dev component classes (eds-*) — opt-in, do not affect
+   pre-existing Tailwind layouts. Use these to give CRM blocks the
+   terminal-portfolio aesthetic on top of the existing structure. ── */
+
+.eds-mono-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.eds-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  color: var(--color-accent-eds);
+  border-radius: 0;
+  background: transparent;
+}
+.eds-tag--blue   { color: var(--color-blue); }
+.eds-tag--green  { color: var(--color-green); }
+.eds-tag--violet { color: var(--color-violet); }
+.eds-tag--accent { color: var(--color-accent-eds); }
+
+.eds-panel {
+  background: rgba(13, 18, 24, 0.7);
+  border: 1px solid var(--color-border-eds);
+  padding: 20px 24px;
+  backdrop-filter: blur(10px);
+  border-radius: 0;
+}
+.eds-panel--accent {
+  border-left: 3px solid var(--color-accent-eds);
+}
+
+.eds-stat {
+  background: rgba(13, 18, 24, 0.6);
+  border-left: 3px solid var(--color-accent-eds);
+  padding: 20px 24px;
+}
+.eds-stat__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+.eds-stat__big {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.05;
+  margin-top: 8px;
+  color: var(--color-accent-eds);
+  font-feature-settings: "tnum" 1;
+}
+.eds-stat__unit {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  margin-left: 4px;
+  color: var(--color-text-eds);
+  opacity: 0.7;
+}
+.eds-stat__sub {
+  margin-top: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-dim);
+}
+
+.eds-sechead {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--color-border-eds);
+  font-family: var(--font-mono);
+}
+.eds-sechead__num {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--color-accent-eds);
+}
+.eds-sechead__title {
+  font-size: 22px;
+  color: var(--color-text-eds);
+}
+.eds-sechead__sub {
+  font-size: 11px;
+  opacity: 0.55;
+  margin-left: auto;
+}
+
+.eds-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.eds-btn--primary {
+  background: var(--color-accent-eds);
+  color: var(--color-bg);
+}
+.eds-btn--primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.eds-btn--ghost {
+  background: transparent;
+  color: var(--color-text-eds);
+  border-color: var(--color-border-eds);
+}
+.eds-btn--ghost:hover {
+  border-color: var(--color-accent-eds);
+  color: var(--color-accent-eds);
+}
+
+.eds-kv {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.eds-kv__k { color: var(--color-text-dim); }
+.eds-kv__v { color: var(--color-text-eds); }
+
+.eds-prompt::before { content: "$ "; color: var(--color-accent-eds); }
+.eds-comment        { color: var(--color-blue); }
+.eds-comment::before { content: "// "; }
+
+/* Decorative grid background — opt-in via .eds-bg-grid */
+.eds-bg-grid {
+  background-image:
+    linear-gradient(var(--color-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
 /* ── Global resets ── */
 *, *::before, *::after {
   box-sizing: border-box;

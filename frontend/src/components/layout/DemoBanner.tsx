@@ -30,43 +30,57 @@ export default function DemoBanner() {
   return (
     <>
       <div
-        className="w-full bg-[var(--accent-soft,#FEF3C7)] border-b border-[var(--accent,#F97316)] text-[var(--text,#0F172A)] text-xs px-3 py-1.5 flex items-center gap-3 flex-wrap shrink-0"
+        className="w-full px-4 py-2 flex items-center gap-3 flex-wrap shrink-0"
+        style={{
+          background: 'rgba(255, 138, 61, 0.10)',
+          borderBottom: '1px solid var(--color-accent-eds)',
+          borderLeft: '3px solid var(--color-accent-eds)',
+          color: 'var(--color-text-eds)',
+        }}
         role="status"
       >
-        <span className="font-semibold">DEMO</span>
-        <span className="opacity-80">
-          Shared sandbox{lastReset ? ` · last reset: ${lastReset}` : ''} · click Reset to refresh
+        <span className="eds-mono-label" style={{ color: 'var(--color-accent-eds)', fontSize: '11px' }}>
+          // DEMO
+        </span>
+        <span className="eds-mono-label" style={{ textTransform: 'none', letterSpacing: 'normal', fontSize: '12px', color: 'var(--color-text-eds)' }}>
+          shared sandbox{lastReset ? ` · last reset: ${lastReset}` : ''} · click reset to refresh
         </span>
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
           disabled={resetting}
-          className="ml-auto px-2.5 py-1 rounded font-semibold text-white bg-[var(--accent,#F97316)] hover:opacity-90 disabled:opacity-50 transition-opacity text-xs"
+          className="eds-btn eds-btn--primary ml-auto"
+          style={{ padding: '4px 12px', fontSize: '10px' }}
         >
-          {resetting ? 'Resetting…' : 'Reset now'}
+          {resetting ? '↻ Resetting' : '→ Reset now'}
         </button>
       </div>
       {confirmOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmOpen(false)}>
-          <div className="bg-[var(--bg-card,#FFFFFF)] rounded-xl p-5 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-base mb-2">Reset demo data?</h3>
-            <p className="text-sm text-[var(--text-secondary,#64748B)] mb-4">
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" onClick={() => setConfirmOpen(false)}>
+          <div
+            className="eds-panel eds-panel--accent max-w-sm w-full"
+            style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--color-accent-eds)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="eds-mono-label mb-2" style={{ color: 'var(--color-accent-eds)' }}>// confirm.reset</div>
+            <h3 className="font-mono text-base mb-2" style={{ color: 'var(--color-text-eds)' }}>Reset demo data?</h3>
+            <p className="text-sm font-mono mb-4" style={{ color: 'var(--color-text-dim)' }}>
               Wipes the shared sandbox for everyone and reloads fresh demo data. The page will reload.
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="px-3 py-1.5 rounded text-sm border border-[var(--border,#E2E8F0)]"
+                className="eds-btn eds-btn--ghost"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => { setConfirmOpen(false); handleReset(); }}
-                className="px-3 py-1.5 rounded text-sm font-semibold text-white bg-[var(--accent,#F97316)] hover:opacity-90"
+                className="eds-btn eds-btn--primary"
               >
-                Reset
+                → Reset
               </button>
             </div>
           </div>

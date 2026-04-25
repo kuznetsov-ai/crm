@@ -163,11 +163,35 @@ export default function Sidebar({ onClose }: Props) {
     >
       {/* Logo */}
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-3 overflow-hidden shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-sm">S</span>
+        <div
+          className="w-8 h-8 flex items-center justify-center shrink-0"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--color-accent-eds)',
+            color: 'var(--color-accent-eds)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '14px',
+            fontWeight: 600,
+          }}
+        >
+          S
         </div>
         {!sidebarCollapsed && (
-          <span className="font-bold text-[var(--text)] truncate">Studio CRM</span>
+          <div className="flex flex-col min-w-0">
+            <span className="eds-mono-label" style={{ fontSize: '9px', color: 'var(--color-accent-eds)', lineHeight: 1 }}>
+              // crm
+            </span>
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--color-text-eds)',
+              letterSpacing: '0.05em',
+              lineHeight: 1.3,
+            }} className="truncate">
+              STUDIO
+            </span>
+          </div>
         )}
         {/* Mobile close */}
         {!sidebarCollapsed && (
