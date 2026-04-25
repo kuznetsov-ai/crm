@@ -710,6 +710,34 @@ export default function ChatPage() {
     setCtxMenu({ x, y, msg })
   }
 
+  // Long-press for touch devices — opens the same context menu after 500ms hold
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleTouchStart = (e: React.TouchEvent, msg: ChatMessage) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+    const touch = e.touches[0]
+    const x = Math.min(touch.clientX, window.innerWidth - 220)
+    const y = Math.min(touch.clientY, window.innerHeight - 280)
+    longPressTimer.current = setTimeout(() => {
+      setCtxMenu({ x, y, msg })
+    }, 500)
+  }
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  // Open the reaction quick-bar inline (positioned at the message)
+  const openReactionPickerForMessage = (msg: ChatMessage, anchor: HTMLElement) => {
+    const r = anchor.getBoundingClientRect()
+    setCtxMenu({
+      x: Math.max(8, Math.min(r.right - 220, window.innerWidth - 220)),
+      y: Math.max(8, r.top - 60),
+      msg,
+    })
+  }
+
   const ctxReply = () => { if (!ctxMenu) return; setReplyTo(ctxMenu.msg); setCtxMenu(null) }
   const ctxForward = () => { if (!ctxMenu) return; setForwardMsg(ctxMenu.msg); setCtxMenu(null) }
   const ctxPin = () => {
@@ -1189,8 +1217,12 @@ export default function ChatPage() {
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''} ${sameAuthor ? 'mt-0.5' : 'mt-3'}`}
+                    className={`group flex gap-2 ${isOwn ? 'flex-row-reverse' : ''} ${sameAuthor ? 'mt-0.5' : 'mt-3'}`}
                     onContextMenu={(e) => handleContextMenu(e, msg)}
+                    onTouchStart={(e) => handleTouchStart(e, msg)}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchCancel={handleTouchEnd}
+                    onTouchMove={handleTouchEnd}
                   >
                     <div className="w-8 shrink-0">
                       {!sameAuthor && !isOwn && (
@@ -1294,24 +1326,35 @@ export default function ChatPage() {
                       </div>
                       )}
 
-                      {msg.reactions.length > 0 && (
-                        <div className="flex gap-1 flex-wrap">
-                          {Object.entries(
-                            msg.reactions.reduce((acc, r) => {
-                              acc[r.emoji] = (acc[r.emoji] ?? 0) + 1
-                              return acc
-                            }, {} as Record<string, number>)
-                          ).map(([emoji, count]) => (
-                            <button
-                              key={emoji}
-                              onClick={() => sendReaction(msg.id, emoji)}
-                              className="text-xs bg-[var(--bg-hover)] border border-[var(--border)] rounded-full px-1.5 py-0.5 hover:border-[var(--accent)] transition-colors"
-                            >
-                              {emoji} {count}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      <div className={`flex items-center gap-1 flex-wrap ${isOwn ? 'flex-row-reverse' : ''}`}>
+                        {msg.reactions.length > 0 && Object.entries(
+                          msg.reactions.reduce((acc, r) => {
+                            acc[r.emoji] = (acc[r.emoji] ?? 0) + 1
+                            return acc
+                          }, {} as Record<string, number>)
+                        ).map(([emoji, count]) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => sendReaction(msg.id, emoji)}
+                            className="text-xs bg-[var(--bg-hover)] border border-[var(--border)] rounded-full px-1.5 py-0.5 hover:border-[var(--accent)] transition-colors"
+                            title="Toggle reaction"
+                          >
+                            {emoji} {count}
+                          </button>
+                        ))}
+
+                        {/* Add-reaction button — always visible on touch devices, hover-only on desktop */}
+                        <button
+                          type="button"
+                          aria-label="Add reaction"
+                          title="Add reaction"
+                          onClick={(e) => openReactionPickerForMessage(msg, e.currentTarget)}
+                          className="text-sm leading-none w-7 h-7 flex items-center justify-center rounded-full bg-[var(--bg-hover)]/60 border border-[var(--border)] hover:bg-[var(--bg-hover)] hover:border-[var(--accent)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors md:opacity-0 md:group-hover:opacity-100"
+                        >
+                          🙂+
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
