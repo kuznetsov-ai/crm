@@ -758,8 +758,18 @@ export default function ChatPage() {
 
   const reactPickerSend = (emoji: string) => {
     if (!reactPickerFor) return
-    sendReaction(reactPickerFor.msgId, emoji)
+    const msgId = reactPickerFor.msgId
     setReactPickerFor(null)
+    // REST is reliable; backend broadcasts via WS so other peers get the update.
+    chatApi.messages.react(msgId, emoji)
+      .then(() => {
+        // Optimistic local refresh — handleReaction will also fire when WS broadcast arrives
+        if (activeChannelId) chatApi.messages.list(activeChannelId).then(setMessages)
+      })
+      .catch(() => {
+        // Last-resort fallback to WS
+        sendReaction(msgId, emoji)
+      })
   }
 
   const ctxReply = () => { if (!ctxMenu) return; setReplyTo(ctxMenu.msg); setCtxMenu(null) }

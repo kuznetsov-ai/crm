@@ -135,6 +135,10 @@ export const chatApi = {
       const { data } = await api.get(`/chat/${channelId}/media/`, { params: { kind } })
       return data
     },
+    react: async (messageId: number, emoji: string): Promise<{ ok: boolean; action: string }> => {
+      const { data } = await api.post(`/chat/messages/${messageId}/react/`, { emoji })
+      return data
+    },
   },
   presence: {
     list: async (channelId: number): Promise<{ members: PresenceMember[]; now: string }> => {

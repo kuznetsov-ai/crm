@@ -266,6 +266,51 @@ class ChatMediaView(APIView):
         return Response({'results': data, 'kind': kind, 'count': len(data)})
 
 
+class ChatReactionToggleView(APIView):
+    """POST /api/chat/messages/<id>/react/ {emoji} — toggle reaction. Mirrors WS path."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        emoji = (request.data.get('emoji') or '').strip()
+        if not emoji:
+            return Response({'error': 'emoji required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            msg = ChatMessage.objects.select_related('channel').get(pk=pk)
+        except ChatMessage.DoesNotExist:
+            return Response({'error': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
+        if not ChatChannel.objects.filter(pk=msg.channel_id, members=request.user).exists():
+            return Response({'error': 'not_a_member'}, status=status.HTTP_403_FORBIDDEN)
+
+        from .models import ChatReaction
+        reaction, created = ChatReaction.objects.get_or_create(
+            message=msg, user=request.user, emoji=emoji,
+            defaults={'workspace_id': msg.workspace_id},
+        )
+        if not created:
+            reaction.delete()
+            action = 'removed'
+        else:
+            action = 'added'
+
+        layer = get_channel_layer()
+        if layer is not None:
+            ws_id = msg.workspace_id
+            group_name = f'ws_{ws_id}_chat_{msg.channel_id}' if ws_id else f'chat_{msg.channel_id}'
+            async_to_sync(layer.group_send)(
+                group_name,
+                {
+                    'type': 'chat_reaction',
+                    'result': {
+                        'message_id': msg.id, 'emoji': emoji,
+                        'action': action, 'user_id': request.user.id,
+                    },
+                },
+            )
+        return Response({
+            'ok': True, 'action': action, 'message_id': msg.id, 'emoji': emoji,
+        })
+
+
 class ChatMessageForwardView(APIView):
     """POST /api/chat/messages/<id>/forward/ {channel_id} — repost into another channel."""
     permission_classes = [IsAuthenticated]
