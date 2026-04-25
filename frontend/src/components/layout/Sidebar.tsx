@@ -158,7 +158,7 @@ export default function Sidebar({ onClose }: Props) {
 
   return (
     <aside
-      className="h-screen bg-[var(--bg-card)] border-r border-[var(--border)] flex flex-col shadow-lg md:shadow-none transition-all duration-300"
+      className="h-screen bg-[var(--bg-card-solid)] border-r border-[var(--border)] flex flex-col shadow-2xl md:shadow-none transition-all duration-300"
       style={{ width: sidebarCollapsed ? '64px' : '240px' }}
     >
       {/* Logo */}

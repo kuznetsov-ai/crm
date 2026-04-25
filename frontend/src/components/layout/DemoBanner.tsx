@@ -25,7 +25,7 @@ export default function DemoBanner() {
 
   const lastReset = info.last_reset_iso
     ? new Date(info.last_reset_iso).toLocaleString()
-    : '—'
+    : null
 
   return (
     <>
@@ -35,7 +35,7 @@ export default function DemoBanner() {
       >
         <span className="font-semibold">DEMO</span>
         <span className="opacity-80">
-          Shared sandbox · resets every {info.reset_interval_hours}h · last reset: {lastReset}
+          Shared sandbox{lastReset ? ` · last reset: ${lastReset}` : ''} · click Reset to refresh
         </span>
         <button
           type="button"
@@ -51,7 +51,7 @@ export default function DemoBanner() {
           <div className="bg-[var(--bg-card,#FFFFFF)] rounded-xl p-5 max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-base mb-2">Reset demo data?</h3>
             <p className="text-sm text-[var(--text-secondary,#64748B)] mb-4">
-              This wipes the shared sandbox for everyone and reloads fresh demo data. The page will reload.
+              Wipes the shared sandbox for everyone and reloads fresh demo data. The page will reload.
             </p>
             <div className="flex gap-2 justify-end">
               <button

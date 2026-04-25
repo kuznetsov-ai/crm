@@ -298,8 +298,8 @@ export default function ClientsPage() {
       ) : clients.length === 0 ? (
         <div className="text-[var(--text-secondary)] text-sm">{t('common.noData')}</div>
       ) : (
-        <div className="bg-[var(--bg-card)] rounded-[var(--radius-xl)] overflow-hidden border border-[var(--border)]">
-          <table className="w-full">
+        <div className="bg-[var(--bg-card)] rounded-[var(--radius-xl)] border border-[var(--border)] overflow-x-auto">
+          <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b border-[var(--border)]">
                 <th className="w-10 px-3 py-3">

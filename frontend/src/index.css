@@ -36,8 +36,9 @@
 :root {
   /* idev-ui base tokens (overrides) */
   --bg:             var(--color-bg);
-  --surface:        rgba(255, 255, 255, 0.025);
-  --surface-2:      rgba(255, 255, 255, 0.045);
+  --surface:        #0d1218;            /* solid card bg — was rgba causing drawer transparency */
+  --surface-2:      #11171f;            /* hover, slightly lighter */
+  --bg-card-solid:  #0a0e14;            /* opaque, used for drawer / modals */
   --text:           var(--color-text-eds);
   --text-muted:     var(--color-text-dim);
   --text-subtle:    rgba(232, 221, 208, 0.4);
@@ -153,9 +154,19 @@ body {
   [style*="grid-template-columns"] {
     grid-template-columns: 1fr !important;
   }
-  /* Tables: allow horizontal scroll *inside* the wrapper, never the page. */
+  /* Tables: scroll horizontally inside their card, never on the page. */
   table {
-    min-width: 0;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+  /* Re-enable normal table layout for thead/tbody after `display: block` on table. */
+  table thead, table tbody, table tfoot {
+    display: table;
+    width: 100%;
+    min-width: max-content;
   }
   /* Hide columns explicitly marked as non-essential on phones. */
   .col-hide-mobile {

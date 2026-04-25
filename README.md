@@ -2,7 +2,7 @@
 
 Multi-module CRM for outstaff/talent agencies. Public demo with read-write sandbox.
 
-**Live demo:** https://crm.ekuznetsov.dev — auto-login as `demo@studio.crm`, sandbox auto-resets every 24 hours.
+**Live demo:** https://crm.ekuznetsov.dev — auto-login as `demo@studio.crm`. The shared sandbox can be reset to clean fixtures at any time by clicking **Reset** in the demo banner.
 
 ![Stack](https://img.shields.io/badge/Backend-Django%205%20%2B%20DRF%20%2B%20Channels-green?style=flat-square)
 ![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite%20%2B%20Tailwind-blue?style=flat-square)
@@ -37,8 +37,7 @@ The public demo on `crm.ekuznetsov.dev` is read-write but bounded:
 
 - **No login.** `BYPASS_AUTH=true` auto-authenticates everyone as the demo user.
 - **One shared database.** Visitors see and edit the same dataset. This is by design — the WebSocket chat, KPI scoreboards, and team calendar would not be meaningful per-cookie.
-- **Daily reset.** A systemd timer flushes the database and reloads demo fixtures every 24 hours, so the sandbox stays clean.
-- **Manual reset.** A button in the demo banner triggers an immediate reset.
+- **Manual reset.** A button in the demo banner triggers an immediate flush + reseed.
 - **AI / external integrations are stubbed.** Endpoints that would call DeepSeek, Anthropic, or HH return canned responses in demo mode — no keys exposed.
 
 ## Tech stack
