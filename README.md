@@ -47,17 +47,37 @@ The team chat is built to feel like a Telegram replacement, not a basic message 
 
 - **Voice messages** with live waveform during recording, custom playback bubble with click-to-seek progress
 - **Typing indicators** — animated dots + "X is typing…" debounced over WebSocket
-- **Reply / Forward** with cross-channel target picker
+- **Online presence** — green dot + "last seen 5 min ago" / "online" everywhere a user appears (DM header, group member list)
+- **Read receipts** — single ✓ for sent, double ✓✓ once any other channel member has loaded the message
+- **Reply** + **Forward** with `Forwarded from <author>` source preview
 - **Pin messages** with navigable pinned banner at the top
-- **Reactions** with quick-pick + reactor list
-- **Edit your messages** inline, with `(edited)` marker
+- **Reactions** with optimistic UI (instant flip — REST fires in background)
+  - Long-press / right-click on a bubble: picker bar above + action menu below (Telegram-style anchored layout, dim backdrop, lifted bubble z-index, haptic vibration on Android)
+  - Click your own reaction badge to remove it; click someone else's to add yours
+- **Edit your messages** inline, Enter to save, Esc to cancel, `(edited)` marker
 - **Delete for everyone** with WS broadcast — sub-second propagation
-- **@mentions** with autocomplete + dedicated inbox
+- **Members panel** — add by email/name search, kick from group; presence dots next to each row
+- **Media gallery** — three tabs (image / audio / file) over the channel's last 200 attachments
+- **@mentions** with autocomplete + dedicated mention inbox
 - **Search** within a channel, click-to-jump-and-highlight result
+- **Mobile single-pane** — channel list ↔ message panel with back chevron (no Telegram-style split forced onto small screens)
+- **iOS-friendly** — native `Copy / Search with Google` long-press menu suppressed; only the in-app picker shows
 - **Image lightbox**, file attachments, audio messages
 - **AI sentiment analysis** of channel mood (DeepSeek-powered)
 
-WebSocket events: `message`, `reaction`, `typing`, `message_edited`, `message_deleted`.
+WebSocket events: `message`, `reaction`, `typing`, `message_edited`, `message_deleted`, `presence`, `message_read`.
+
+REST endpoints for chat operations:
+- `POST /api/chat/messages/<id>/react/`  — toggle reaction (used as primary path, WS broadcasts to peers)
+- `POST /api/chat/messages/<id>/forward/` — repost into another channel
+- `PATCH /api/chat/messages/<id>/`        — edit own text
+- `DELETE /api/chat/messages/<id>/`       — delete-for-all
+- `GET   /api/chat/<channel>/search/?q=`  — full-text-ish search
+- `GET   /api/chat/<channel>/presence/`   — member online + last_seen
+- `POST  /api/chat/<channel>/mark-read/`  — record read receipts
+- `POST  /api/chat/<channel>/members/`    — add to group
+- `DELETE /api/chat/<channel>/members/<uid>/` — kick from group
+- `GET   /api/chat/<channel>/media/?kind=image|audio|file` — gallery
 
 ## Tech stack
 

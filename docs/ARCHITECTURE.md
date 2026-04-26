@@ -48,13 +48,13 @@ Only `studio-crm-nginx` exposes a host port (`3500`). Everything else is reachab
 
 | App | Responsibility |
 |-----|---------------|
-| `users` | Custom `User` (email-based), JWT auth, BypassAuthentication for demo, role permissions |
+| `users` | Custom `User` (email-based, with `last_seen`), JWT auth, BypassAuthentication for demo, role permissions |
 | `workspaces` | Multi-tenant `Workspace` + `Membership`. Every business entity has `workspace_id` FK |
 | `clients` | `Client`, `Contact`, `RateCard`, `ClientNote`, `BenchPerson`, custom-fields glue |
 | `deals` | `Deal`, stages, `DealItem` (line items), renewals, document linking |
 | `leads` | Inbound lead capture; converts to client + deal |
 | `tasks` | `Task` linked to client/deal, priority, deadline, assigned_to |
-| `chat` | `ChatChannel`, `ChatMessage`, `ChatReaction`, `ChatMention`. ASGI consumer for realtime |
+| `chat` | `ChatChannel`, `ChatMessage`, `ChatReaction`, `ChatMention`, `ChatMessageRead`. `ChatMessage` has `forwarded_from` self-FK. ASGI consumer for realtime |
 | `events` | Calendar events with reminders |
 | `calendar` | Calendar API surface (events + free/busy) |
 | `kpi` | Per-user KPI cards, period aggregations |
@@ -95,16 +95,68 @@ Errors from any provider surface inside the AI output rather than 500'ing the re
 | `typing` | `{user_id, user_name, is_typing}` (own events filtered out) |
 | `message_edited` | `{message: ChatMessage}` |
 | `message_deleted` | `{message_id}` |
+| `presence` | `{user_id, user_name, online, last_seen}` (broadcast on connect/disconnect) |
+| `message_read` | `{message_id, user_id, read_at}` (broadcast when someone marks as read) |
 
 **Client → server events:**
 
 | Type | Payload |
 |------|---------|
 | `message` | `{text, reply_to?}` |
-| `reaction` | `{message_id, emoji}` (toggle) |
+| `reaction` | `{message_id, emoji}` (toggle — kept as fallback only; primary path is REST) |
 | `typing` | `{is_typing}` |
 
-REST endpoints handle the rest (edit/delete/search/forward/pin/attachment-upload).
+### Why reactions go through REST instead of WS
+
+In React 19, `e.stopPropagation()` on a synthetic event does **not** stop the
+native DOM bubble. The reaction picker had a document-level `mousedown` listener
+(close-on-click-outside) that fired in the same tick as the click on the emoji
+button — even with `stopPropagation`. The result: the click handler ran but the
+WS frame queued by `wsRef.send(JSON.stringify(...))` was sometimes dropped
+on iOS Safari and Chromium. Backend never received the frame, no
+`ChatReaction` row was created.
+
+Switching reactions to **REST `POST /api/chat/messages/<id>/react/`** (which
+broadcasts via `chat_reaction` to the same WS group) eliminated the race
+entirely. The WS reaction handler is kept as a fallback for code paths that
+already had it wired.
+
+The frontend additionally uses **optimistic UI**: `setMessages` flips the
+local state synchronously, then `chatApi.messages.react()` runs in the
+background. On error the messages list is reloaded from the server.
+
+### REST endpoints (chat)
+
+```
+POST   /api/chat/messages/<id>/react/         { emoji }   toggle reaction
+POST   /api/chat/messages/<id>/forward/       { channel_id } repost into another channel
+PATCH  /api/chat/messages/<id>/               { text }    edit own message
+DELETE /api/chat/messages/<id>/                          delete-for-all (broadcasts)
+GET    /api/chat/<channel>/search/?q=                    full-text-ish search
+GET    /api/chat/<channel>/presence/                     member online + last_seen
+POST   /api/chat/<channel>/mark-read/         { message_ids: [..] }  read receipts
+POST   /api/chat/<channel>/members/           { user_ids: [..] }  add to group
+DELETE /api/chat/<channel>/members/<uid>/                kick from group
+GET    /api/chat/<channel>/media/?kind=image|audio|file  gallery (last 200)
+POST   /api/chat/<channel>/messages/          (multipart) send with optional attachment
+```
+
+### Long-press / right-click context menu — Telegram-style
+
+Triggered by:
+- **Right-click** (desktop) — `onContextMenu` handler
+- **Long-press ≥ 500ms** (touch) — single `setTimeout` started on `touchstart`,
+  cancelled by `touchend` / `touchmove`. Fires `navigator.vibrate(15)` on
+  Android for haptic feel.
+
+Layout (anchored to the bubble's `getBoundingClientRect()`, not click coords):
+- **Reaction picker** rendered above the bubble (or below if no room)
+- **Action menu** (Reply / Forward / Pin / Copy / Edit / Delete) below
+- Both align horizontally to the bubble edge: own messages → right-aligned, others → left
+- A `position:fixed` backdrop with `bg-black/40 backdrop-blur-[2px]` dims the rest
+- The active bubble is lifted to `z-50` so it visually "stays" on top
+- iOS native `Copy / Search with Google` selection menu is suppressed via
+  `-webkit-touch-callout: none` + `user-select: none` on the chat root
 
 ## Frontend layout (React 19 + Vite)
 
