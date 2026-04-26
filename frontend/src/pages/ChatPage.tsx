@@ -736,19 +736,13 @@ export default function ChatPage() {
       longPressTimer.current = null
     }, 500)
 
-    // Double-tap detection
+    // Double-tap detection — opens the SAME context menu as long-press / right-click
     const now = Date.now()
     const last = lastTapAtRef.current
     if (last && last.msgId === msg.id && now - last.t < 300) {
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
       lastTapAtRef.current = null
-      if (rect) {
-        setReactPickerFor({
-          msgId: msg.id,
-          x: Math.max(8, Math.min(rect.left, window.innerWidth - 280)),
-          y: Math.max(8, rect.top - 56),
-        })
-      }
+      if (rect) setCtxMenu({ msg, rect })
     } else {
       lastTapAtRef.current = { msgId: msg.id, t: now }
     }
