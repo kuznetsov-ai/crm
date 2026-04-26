@@ -297,6 +297,23 @@ body {
   border-radius: 12px;
 }
 
+/* Suppress iOS native long-press menu (Copy / Search with Google) inside the chat —
+   we provide our own context menu, native overlay duplicated and intercepted touches. */
+.chat-no-select,
+.chat-no-select * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+/* Inputs and textareas inside the chat must remain selectable (composer field). */
+.chat-no-select input,
+.chat-no-select textarea,
+.chat-no-select [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* ── Mobile anti-overflow defences ──
    Prevent CSS Grid / Flex children from pushing the parent past viewport.
    Applies under 860px, matches the AppLayout md: breakpoint Tailwind uses (768px),
