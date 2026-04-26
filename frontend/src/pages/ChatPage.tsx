@@ -723,29 +723,20 @@ export default function ChatPage() {
   }
 
   // Long-press (touch ≥ 500ms) opens the context menu.
-  // Double-tap (two taps within 300ms) opens the reaction quick-picker.
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastTapAtRef = useRef<{ msgId: number; t: number } | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent, msg: ChatMessage) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
     const target = e.currentTarget as HTMLElement
     const rect = captureBubbleRect(target)
     longPressTimer.current = setTimeout(() => {
-      if (rect) setCtxMenu({ msg, rect })
+      if (rect) {
+        setCtxMenu({ msg, rect })
+        // Haptic feedback — like Telegram. No-op on iOS Safari (unsupported), works on Android.
+        try { navigator.vibrate?.(15) } catch { /* noop */ }
+      }
       longPressTimer.current = null
     }, 500)
-
-    // Double-tap detection — opens the SAME context menu as long-press / right-click
-    const now = Date.now()
-    const last = lastTapAtRef.current
-    if (last && last.msgId === msg.id && now - last.t < 300) {
-      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
-      lastTapAtRef.current = null
-      if (rect) setCtxMenu({ msg, rect })
-    } else {
-      lastTapAtRef.current = { msgId: msg.id, t: now }
-    }
   }
   const handleTouchEnd = () => {
     if (longPressTimer.current) {
