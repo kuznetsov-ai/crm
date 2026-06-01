@@ -8,7 +8,7 @@ redis==5.2.1
 django-redis==5.4.0
 python-dotenv==1.0.1
 sentry-sdk==2.19.2
-Pillow==11.0.0
+Pillow==12.2.0
 gunicorn==23.0.0
 channels==4.1.0
 channels-redis==4.2.0
